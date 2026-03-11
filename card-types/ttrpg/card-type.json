@@ -95,7 +95,26 @@
     {
       "key": "components",
       "label": "Components Needed",
-      "type": "text"
+      "type": "multi-select",
+      "separator": "|",
+      "options": [
+        "Custom cards",
+        "Standard cards",
+        "Character sheets",
+        "Polyhedral dice",
+        "D6 only",
+        "Stackable dice",
+        "Jenga tower",
+        "Tokens",
+        "Coins",
+        "Map",
+        "Playmat",
+        "Paper & pencil",
+        "Rules booklet",
+        "One page RPG",
+        "No components",
+        "Specialty"
+      ]
     },
     {
       "key": "link",

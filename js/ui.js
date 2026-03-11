@@ -3,7 +3,7 @@
  */
 import * as registry from './card-type-registry.js';
 import { renderCard } from './template-renderer.js';
-import { parseCsv, generateCsv } from './csv-parser.js';
+import { parseCsv, generateCsv, remapHeaders } from './csv-parser.js';
 import { renderTable, destroyTable } from './table-view.js';
 import { initEditView, openEditModal } from './edit-view.js';
 import { buildPrintLayout, clearPrintLayout } from './print-layout.js';
@@ -303,7 +303,7 @@ async function loadCsvFile(file, displayName) {
     return;
   }
 
-  const { data, errors } = await parseCsv(file);
+  let { data, errors } = await parseCsv(file);
   if (errors.length > 0) {
     showToast(`CSV warnings: ${errors[0]}`, 'error');
   }
@@ -312,6 +312,8 @@ async function loadCsvFile(file, displayName) {
     return;
   }
 
+  // Remap CSV headers (labels or old keys) to current field keys
+  data = remapHeaders(data, ct.fields);
   currentData = data;
   rerenderActiveView(ct, data);
   updateSaveState();

@@ -472,6 +472,38 @@ select.cell-edit-input {
   color: var(--text-muted);
 }
 
+/* ===== Pill Picker (toggle-style multi-select) ===== */
+.pill-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px;
+}
+
+.pill-picker-pill {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.pill-picker-pill:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.pill-picker-pill.selected {
+  background: #e8f0fe;
+  color: #1a5276;
+  border-color: #c5d5ea;
+}
+
 @media print {
   .table-view { display: none !important; }
 }

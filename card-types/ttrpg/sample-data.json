@@ -12,7 +12,7 @@
     "hook": "You are criminal bears pulling off the greatest honey heist the world has ever seen. Two stats: BEAR and CRIMINAL. Things will go wrong.",
     "if_you_like": "If you enjoyed Ocean's Eleven or love the chaos of party games like Exploding Kittens, this one's for you.",
     "bg_icon": "delapouite/bear-head",
-    "components": "Needs: D6 only",
+    "components": "D6 only",
     "link": "https://granthovverton.itch.io/honey-heist",
     "back_color": "#6aab6a"
   },
@@ -29,7 +29,7 @@
     "hook": "The world's most popular tabletop RPG. Create a hero, team up with allies, and explore dungeons full of monsters, traps, and treasure.",
     "if_you_like": "If you enjoy Lord of the Rings, Baldur's Gate 3, or building characters with deep customization options.",
     "bg_icon": "lorc/swords-emblem",
-    "components": "Needs: Full polyhedral dice set (d4–d20), character sheets",
+    "components": "Polyhedral dice|Character sheets",
     "link": "https://www.dndbeyond.com",
     "back_color": "#7b2d26"
   },
@@ -46,7 +46,7 @@
     "hook": "Investigate cosmic horrors in the 1920s. Your characters are fragile, sanity is fleeting, and the truth is worse than you imagined.",
     "if_you_like": "If you're a fan of H.P. Lovecraft, Sherlock Holmes, or slow-burn horror like Hereditary.",
     "bg_icon": "lorc/tentacles-skull",
-    "components": "Needs: D100 (two d10s), character sheets",
+    "components": "Polyhedral dice|Character sheets",
     "link": "https://www.chaosium.com/call-of-cthulhu-rpg/",
     "back_color": "#2c3e50"
   },
@@ -63,7 +63,7 @@
     "hook": "Play a crew of daring scoundrels in a haunted industrial-fantasy city. Plan heists, deal with factions, and embrace the chaos.",
     "if_you_like": "If you love Peaky Blinders, Dishonored, or the idea of playing antiheroes in a gritty world.",
     "bg_icon": "lorc/daggers",
-    "components": "Needs: D6 pool (6–8 dice), crew/character sheets",
+    "components": "D6 only|Character sheets",
     "link": "https://bladesinthedark.com",
     "back_color": "#34495e"
   },
@@ -80,7 +80,7 @@
     "hook": "Survive the horrors of space. A sci-fi horror RPG where your stress builds, your ship falls apart, and no one can hear you scream.",
     "if_you_like": "If you're into Alien, Dead Space, or Event Horizon and want that dread at the table.",
     "bg_icon": "lorc/alien-skull",
-    "components": "Needs: D100, d10, character sheets",
+    "components": "Polyhedral dice|Character sheets",
     "link": "https://www.mothershiprpg.com",
     "back_color": "#1a1a2e"
   },
@@ -97,7 +97,7 @@
     "hook": "A GM-less game about powerful ambition and poor impulse control. Create a Coen Brothers-style story where everything spirals out of control.",
     "if_you_like": "If you enjoy Fargo, Burn After Reading, or improv comedy where plans go spectacularly wrong.",
     "bg_icon": "lorc/drama-masks",
-    "components": "Needs: Playset cards (or classic: 4d6 per player)",
+    "components": "Custom cards|D6 only",
     "link": "https://bullypulpitgames.com/fiasco/",
     "back_color": "#8e44ad"
   }

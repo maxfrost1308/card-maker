@@ -3,7 +3,7 @@
  */
 import { getData, setRowData, getActiveCardType, rerenderActiveView } from './ui.js';
 import { showToast } from './ui.js';
-import { createTagPicker } from './table-view.js';
+import { createPillPicker } from './table-view.js';
 
 let currentEditIndex = null;
 let initialized = false;
@@ -126,7 +126,7 @@ export function openEditModal(rowIndex) {
     } else if (field.type === 'multi-select' && field.options) {
       const sep = field.separator || '|';
       const selected = typeof value === 'string' ? value.split(sep).map(v => v.trim()).filter(Boolean) : [];
-      const picker = createTagPicker(field, selected, () => {});
+      const picker = createPillPicker(field, selected, () => {});
       picker.dataset.fieldKey = field.key;
       wrapper.appendChild(picker);
 
@@ -164,7 +164,7 @@ function saveCurrentEdit() {
     if (field.key === 'verified_fields') continue;
 
     if (field.type === 'multi-select') {
-      const picker = body.querySelector(`.tag-picker[data-field-key="${field.key}"]`);
+      const picker = body.querySelector(`.pill-picker[data-field-key="${field.key}"]`);
       if (picker) {
         const sep = field.separator || '|';
         newRow[field.key] = (picker._selectedValues || []).join(sep);

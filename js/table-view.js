@@ -588,7 +588,7 @@ function startCellEdit(td, rowIdx, field) {
     const sep = field.separator || '|';
     const selected = currentValue ? String(currentValue).split(sep).map(v => v.trim()).filter(Boolean) : [];
 
-    const picker = createTagPicker(field, selected, (newValues) => {
+    const picker = createPillPicker(field, selected, (newValues) => {
       td._tagPickerValues = newValues;
     });
     td._tagPickerValues = selected;
@@ -793,6 +793,51 @@ function updateSelectAllState(visibleIndices) {
   const someChecked = visibleIndices.some(i => selectedIndices.has(i));
   selectAllCb.checked = allChecked;
   selectAllCb.indeterminate = someChecked && !allChecked;
+}
+
+// ===== Pill Picker (click-to-toggle multi-select) =====
+
+export function createPillPicker(field, selectedValues, onChange) {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'pill-picker';
+  wrapper._selectedValues = [...selectedValues];
+
+  function render() {
+    wrapper.innerHTML = '';
+    for (const opt of field.options) {
+      const pill = document.createElement('button');
+      pill.type = 'button';
+      pill.className = 'pill-picker-pill';
+      pill.textContent = opt;
+
+      const isSelected = wrapper._selectedValues.includes(opt);
+      if (isSelected) {
+        pill.classList.add('selected');
+        if (field.pillColors && field.pillColors[opt]) {
+          pill.style.backgroundColor = field.pillColors[opt];
+          pill.style.color = '#fff';
+          pill.style.borderColor = field.pillColors[opt];
+        }
+      }
+
+      pill.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (wrapper._selectedValues.includes(opt)) {
+          wrapper._selectedValues = wrapper._selectedValues.filter(v => v !== opt);
+        } else {
+          wrapper._selectedValues.push(opt);
+        }
+        render();
+        onChange(wrapper._selectedValues);
+      });
+
+      wrapper.appendChild(pill);
+    }
+  }
+
+  render();
+  return wrapper;
 }
 
 export function destroyTable() {

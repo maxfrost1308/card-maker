@@ -92,6 +92,10 @@ export function renderTemplate(template, data) {
     const val = data[key];
     if (Array.isArray(val)) {
       if (val.length === 0) return '';
+      // If inner template has no {{.}} placeholder, treat as truthy check (render once)
+      if (!inner.includes('{{.}}') && !inner.includes('{{{.}}}')) {
+        return inner;
+      }
       return val.map((item, i) => {
         let out = inner;
         // {{.}} = the value, {{@index}} = index
