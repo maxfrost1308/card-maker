@@ -1,0 +1,48 @@
+<div class="pc-card pc-front" data-card-type="plant-care" data-difficulty="{{difficulty_lower}}">
+  <div class="pc-header">
+    <div class="pc-category-badge">{{category}}</div>
+    <h1 class="pc-name">{{name}}</h1>
+    {{#botanical}}<p class="pc-botanical">{{botanical}}</p>{{/botanical}}
+  </div>
+
+  <div class="pc-stats">
+    <div class="pc-stat">
+      <span class="pc-stat-icon">&#9728;</span>
+      <span class="pc-stat-label">Light</span>
+      <span class="pc-stat-value">{{light}}</span>
+    </div>
+    <div class="pc-stat">
+      <span class="pc-stat-icon">&#128167;</span>
+      <span class="pc-stat-label">Water</span>
+      <span class="pc-stat-value">{{water}}</span>
+    </div>
+    <div class="pc-stat">
+      <span class="pc-stat-icon">&#127793;</span>
+      <span class="pc-stat-label">Growth</span>
+      <span class="pc-stat-value">{{growth_rate}}</span>
+    </div>
+  </div>
+
+  <div class="pc-meta-row">
+    <div class="pc-difficulty pc-difficulty-{{difficulty_lower}}">{{difficulty}}</div>
+    <div class="pc-pet-safe pc-pet-{{pet_safe_lower}}">
+      {{#pet_safe}}Pet: {{pet_safe}}{{/pet_safe}}
+    </div>
+  </div>
+
+  <div class="pc-seasons">
+    {{#seasons}}<span class="pc-season pc-season-{{.}}">{{.}}</span>{{/seasons}}
+  </div>
+
+  {{#humidity}}
+  <div class="pc-humidity">
+    <span class="pc-stat-label">Humidity:</span> {{humidity}}
+  </div>
+  {{/humidity}}
+
+  {{#mature_size}}
+  <div class="pc-size">
+    <span class="pc-stat-label">Size:</span> {{mature_size}}
+  </div>
+  {{/mature_size}}
+</div>

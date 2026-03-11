@@ -1,0 +1,188 @@
+/* ===== Reset & Base ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --sidebar-width: 280px;
+  --bg: #f5f5f5;
+  --surface: #fff;
+  --border: #ddd;
+  --text: #333;
+  --text-muted: #777;
+  --accent: #4a6fa5;
+  --accent-hover: #3a5a8a;
+  --radius: 6px;
+  --card-gap: 12px;
+}
+
+html { font-family: system-ui, -apple-system, sans-serif; color: var(--text); background: var(--bg); }
+
+/* ===== App Header ===== */
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.app-header h1 { font-size: 1.25rem; font-weight: 700; }
+.header-actions { display: flex; align-items: center; gap: 16px; }
+.toggle-label { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; cursor: pointer; }
+
+/* ===== Buttons ===== */
+.btn {
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background 0.15s;
+}
+.btn:hover { background: #eee; }
+.btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+.btn-primary:hover { background: var(--accent-hover); }
+
+/* ===== Layout ===== */
+.app-layout {
+  display: flex;
+  min-height: calc(100vh - 53px);
+}
+
+/* ===== Sidebar ===== */
+.sidebar {
+  width: var(--sidebar-width);
+  min-width: var(--sidebar-width);
+  padding: 16px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  max-height: calc(100vh - 53px);
+  position: sticky;
+  top: 53px;
+}
+
+.sidebar-section { margin-bottom: 24px; }
+.sidebar-section h2 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 8px; }
+
+.sidebar select, .sidebar input[type="file"] {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 0.85rem;
+  background: var(--surface);
+}
+.sidebar input[type="file"] { padding: 4px; }
+
+.help-text { font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; }
+.help-link { font-size: 0.75rem; display: inline-block; margin-top: 4px; color: var(--accent); }
+
+.custom-upload-group { display: flex; flex-direction: column; gap: 10px; }
+.custom-upload-group label { font-size: 0.8rem; color: var(--text-muted); display: flex; flex-direction: column; gap: 4px; }
+
+/* ===== Field Reference ===== */
+.field-ref { font-size: 0.75rem; }
+.field-ref-item {
+  padding: 4px 0;
+  border-bottom: 1px solid #eee;
+}
+.field-ref-item:last-child { border-bottom: none; }
+.field-ref-key { font-weight: 600; font-family: monospace; }
+.field-ref-type { color: var(--accent); margin-left: 4px; font-size: 0.7rem; }
+.field-ref-opts { color: var(--text-muted); font-size: 0.7rem; margin-top: 2px; }
+
+/* ===== Main Area ===== */
+.main-area {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+/* ===== Card Grid ===== */
+.card-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--card-gap);
+  justify-content: center;
+}
+
+.card-pair {
+  display: flex;
+  gap: 4px;
+}
+
+.card-wrapper {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  background: #fff;
+}
+.card-wrapper.card-back-wrapper {
+  background: #fff;
+}
+
+/* ===== Empty State ===== */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-muted);
+  width: 100%;
+}
+.empty-state p { margin-bottom: 8px; }
+
+/* ===== Toast ===== */
+.toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #333;
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: var(--radius);
+  font-size: 0.85rem;
+  z-index: 1000;
+  transition: opacity 0.3s;
+}
+.toast.toast-error { background: #c0392b; }
+.toast.toast-success { background: #27ae60; }
+
+/* ===== Print Styles ===== */
+@media print {
+  .app-header, .sidebar, .toast, .empty-state { display: none !important; }
+
+  .app-layout { display: block; }
+
+  .main-area {
+    padding: 0;
+    overflow: visible;
+  }
+
+  .card-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2mm;
+    justify-content: flex-start;
+  }
+
+  .card-pair {
+    gap: 2mm;
+  }
+
+  .card-wrapper {
+    box-shadow: none;
+    border: 0.5pt solid #ccc;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  @page {
+    size: A4;
+    margin: 10mm;
+  }
+}
