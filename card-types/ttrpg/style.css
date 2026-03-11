@@ -151,6 +151,10 @@
   object-fit: contain;
 }
 
+.ttrpg-back-icon img.icon-img {
+  mix-blend-mode: screen;
+}
+
 .ttrpg-back-title {
   position: absolute;
   top: 10px;

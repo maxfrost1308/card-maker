@@ -8,7 +8,7 @@ import { renderTable, destroyTable } from './table-view.js';
 import { initEditView, openEditModal } from './edit-view.js';
 import { buildPrintLayout, clearPrintLayout } from './print-layout.js';
 import { getStarterSchema, getStarterFront, getStarterBack, getStarterCss } from './starter-files.js';
-import { preloadIcons, fetchIcon } from './icon-loader.js';
+import { preloadIcons } from './icon-loader.js';
 
 // DOM refs
 const cardTypeSelect = document.getElementById('card-type-select');
@@ -231,27 +231,6 @@ export async function renderCards(cardType, rows) {
     renderEmpty();
   }
 
-  // Post-render: enhance icon <img> tags by fetching SVG and replacing with inline SVG
-  enhanceIconImages(cardGrid);
-}
-
-/**
- * Replace icon <img> tags with inline SVGs (background stripped) when fetch succeeds.
- */
-function enhanceIconImages(container) {
-  const imgs = container.querySelectorAll('img.icon-img');
-  for (const img of imgs) {
-    const iconName = img.dataset.icon;
-    if (!iconName) continue;
-    fetchIcon(iconName).then(svg => {
-      if (svg && img.parentNode) {
-        const wrapper = document.createElement('span');
-        wrapper.innerHTML = svg;
-        const svgEl = wrapper.firstElementChild;
-        if (svgEl) img.replaceWith(svgEl);
-      }
-    }).catch(() => {}); // Keep <img> fallback on failure
-  }
 }
 
 function renderEmpty() {

@@ -11,7 +11,7 @@
  *   {{{qr:field}}}                   — inline QR code SVG from field value
  */
 
-import { getCachedIcon, resolveIconUrl } from './icon-loader.js';
+import { resolveIconUrl } from './icon-loader.js';
 import { generateQrSvg } from './qr-code.js';
 
 const ESC_MAP = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
@@ -79,14 +79,13 @@ export function renderTemplate(template, data) {
   let html = template;
 
   // 0a. Icon substitution: {{{icon:field}}}
-  // Use cached inline SVG if available; otherwise render <img> with direct URL
+  // Always use <img> tag with direct URL (avoids CORS issues with game-icons.net)
   html = html.replace(/\{\{\{icon:(\w+)\}\}\}/g, (_, key) => {
     const val = data[key];
     if (!val) return '';
-    const svg = getCachedIcon(val);
-    if (svg) return svg;
-    const url = resolveIconUrl(String(val));
-    if (url) return `<img src="${escapeHtml(url)}" class="icon-img" data-icon="${escapeHtml(String(val))}" alt="icon" crossorigin="anonymous">`;
+    // Use black bg / white fg so mix-blend-mode: screen makes bg transparent
+    const url = resolveIconUrl(String(val), 'ffffff', '000000');
+    if (url) return `<img src="${escapeHtml(url)}" class="icon-img" data-icon="${escapeHtml(String(val))}" alt="icon">`;
     return '';
   });
 
