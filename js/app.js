@@ -8,6 +8,7 @@ async function init() {
   try {
     // Register built-in card types
     await registerBuiltIn('plant-care');
+    await registerBuiltIn('ttrpg');
 
     // Populate UI
     refreshCardTypeList();
