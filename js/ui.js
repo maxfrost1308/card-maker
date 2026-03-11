@@ -40,6 +40,11 @@ const hasFSAPI = 'showOpenFilePicker' in window;
 export function getData() { return currentData; }
 export function setRowData(index, row) { currentData[index] = row; }
 export function getActiveCardType() { return registry.get(cardTypeSelect.value); }
+export function deleteRows(indices) {
+  if (!currentData) return;
+  const sorted = [...indices].sort((a, b) => b - a);
+  for (const i of sorted) currentData.splice(i, 1);
+}
 
 /**
  * Populate the card type dropdown with all registered types.
