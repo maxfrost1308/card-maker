@@ -11,7 +11,7 @@
  *   {{{qr:field}}}                   — inline QR code SVG from field value
  */
 
-import { getCachedIcon } from './icon-loader.js';
+import { getCachedIcon, resolveIconUrl } from './icon-loader.js';
 import { generateQrSvg } from './qr-code.js';
 
 const ESC_MAP = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
@@ -79,11 +79,15 @@ export function renderTemplate(template, data) {
   let html = template;
 
   // 0a. Icon substitution: {{{icon:field}}}
+  // Use cached inline SVG if available; otherwise render <img> with direct URL
   html = html.replace(/\{\{\{icon:(\w+)\}\}\}/g, (_, key) => {
     const val = data[key];
     if (!val) return '';
     const svg = getCachedIcon(val);
-    return svg || `<span class="icon-placeholder" data-icon="${escapeHtml(String(val))}"></span>`;
+    if (svg) return svg;
+    const url = resolveIconUrl(String(val));
+    if (url) return `<img src="${escapeHtml(url)}" class="icon-img" data-icon="${escapeHtml(String(val))}" alt="icon" crossorigin="anonymous">`;
+    return '';
   });
 
   // 0b. QR code substitution: {{{qr:field}}}

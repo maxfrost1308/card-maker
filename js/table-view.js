@@ -26,6 +26,24 @@ let filterTokensRef = null;
 let filterDropdownRef = null;
 let aggregationBarRef = null;
 
+// Predefined palette for hash-based tag colors
+const TAG_COLORS = [
+  '#6a4c93', '#2e86ab', '#c44569', '#5b7553', '#e07b00',
+  '#8b1a1a', '#3c3c6e', '#b8560b', '#d4a017', '#34495e',
+  '#7a5195', '#8b7355', '#e91e63', '#6b4c8a', '#7bb369',
+];
+
+/**
+ * Get a consistent color for a tag value based on its name hash.
+ */
+function hashTagColor(value) {
+  let hash = 0;
+  for (let i = 0; i < value.length; i++) {
+    hash = ((hash << 5) - hash + value.charCodeAt(i)) | 0;
+  }
+  return TAG_COLORS[Math.abs(hash) % TAG_COLORS.length];
+}
+
 /**
  * Get the list of fields that should be visible in the table.
  */
@@ -367,9 +385,25 @@ function showValueStep(dropdown, field, fields) {
   header.append(backBtn, title);
   dropdown.appendChild(header);
 
+  // Collect filter options: from schema (select/multi-select) or from data (tags)
+  let filterOptions = null;
   if ((field.type === 'select' || field.type === 'multi-select') && field.options) {
+    filterOptions = field.options;
+  } else if (field.type === 'tags' && currentRows) {
+    const sep = field.separator || '|';
+    const optSet = new Set();
+    for (const row of currentRows) {
+      const val = row[field.key];
+      if (val && typeof val === 'string') {
+        val.split(sep).map(v => v.trim()).filter(Boolean).forEach(v => optSet.add(v));
+      }
+    }
+    if (optSet.size > 0) filterOptions = [...optSet].sort();
+  }
+
+  if (filterOptions) {
     const filterSet = columnFilters[field.key];
-    for (const opt of field.options) {
+    for (const opt of filterOptions) {
       const label = document.createElement('label');
       label.className = 'filter-value-label';
       const cb = document.createElement('input');
@@ -395,6 +429,10 @@ function showValueStep(dropdown, field, fields) {
       pill.textContent = opt;
       if (field.pillColors && field.pillColors[opt]) {
         pill.style.backgroundColor = field.pillColors[opt];
+        pill.style.color = '#fff';
+      } else if (field.type === 'tags') {
+        const tagColor = hashTagColor(opt);
+        pill.style.backgroundColor = tagColor;
         pill.style.color = '#fff';
       }
       label.append(cb, ' ', pill);
@@ -526,6 +564,8 @@ function renderCellContent(td, value, field) {
         const pill = document.createElement('span');
         pill.className = 'cell-pill';
         pill.textContent = v;
+        pill.style.backgroundColor = hashTagColor(v);
+        pill.style.color = '#fff';
         group.appendChild(pill);
       }
       td.appendChild(group);
@@ -583,6 +623,9 @@ export function createTagPicker(field, selectedValues, onChange, allRows) {
       pill.className = 'tag-pill';
       if (field.pillColors && field.pillColors[val]) {
         pill.style.backgroundColor = field.pillColors[val];
+        pill.style.color = '#fff';
+      } else if (field.type === 'tags') {
+        pill.style.backgroundColor = hashTagColor(val);
         pill.style.color = '#fff';
       }
       const text = document.createElement('span');

@@ -89,15 +89,23 @@ const FORMAT_BITS = [
 ];
 
 // ---- Matrix operations ----
+// We use two matrices:
+//   matrix:   0=unset, 1=black, -1=white
+//   isFunc:   true if the cell is a function pattern (finder, alignment, timing, format)
+//             Mask should NOT be applied to function pattern cells.
 function createMatrix(size) {
-  return Array.from({ length: size }, () => new Int8Array(size)); // 0=unset, 1=black, -1=white(reserved)
+  return Array.from({ length: size }, () => new Int8Array(size));
+}
+
+function createFuncMatrix(size) {
+  return Array.from({ length: size }, () => new Uint8Array(size)); // 0=data, 1=function
 }
 
 function setModule(matrix, r, c, val) {
   matrix[r][c] = val ? 1 : -1;
 }
 
-function addFinderPattern(matrix, row, col) {
+function addFinderPattern(matrix, isFunc, row, col) {
   for (let r = -1; r <= 7; r++) {
     for (let c = -1; c <= 7; c++) {
       const mr = row + r, mc = col + c;
@@ -106,44 +114,53 @@ function addFinderPattern(matrix, row, col) {
       const inInner = r >= 2 && r <= 4 && c >= 2 && c <= 4;
       const inBorder = r === -1 || r === 7 || c === -1 || c === 7;
       setModule(matrix, mr, mc, !inBorder && (inOuter || inInner));
+      isFunc[mr][mc] = 1;
     }
   }
 }
 
-function addAlignmentPattern(matrix, row, col) {
+function addAlignmentPattern(matrix, isFunc, row, col) {
   for (let r = -2; r <= 2; r++) {
     for (let c = -2; c <= 2; c++) {
       const isBlack = Math.abs(r) === 2 || Math.abs(c) === 2 || (r === 0 && c === 0);
       setModule(matrix, row + r, col + c, isBlack);
+      isFunc[row + r][col + c] = 1;
     }
   }
 }
 
-function addTimingPatterns(matrix) {
+function addTimingPatterns(matrix, isFunc) {
   const n = matrix.length;
   for (let i = 8; i < n - 8; i++) {
     setModule(matrix, 6, i, i % 2 === 0);
     setModule(matrix, i, 6, i % 2 === 0);
+    isFunc[6][i] = 1;
+    isFunc[i][6] = 1;
   }
 }
 
-function reserveFormatArea(matrix) {
+function reserveFormatArea(matrix, isFunc) {
   const n = matrix.length;
   // Around top-left finder
   for (let i = 0; i < 9; i++) {
     if (matrix[8][i] === 0) setModule(matrix, 8, i, false);
     if (matrix[i][8] === 0) setModule(matrix, i, 8, false);
+    isFunc[8][i] = 1;
+    isFunc[i][8] = 1;
   }
   // Around top-right finder
   for (let i = 0; i < 8; i++) {
     if (matrix[8][n - 1 - i] === 0) setModule(matrix, 8, n - 1 - i, false);
+    isFunc[8][n - 1 - i] = 1;
   }
   // Around bottom-left finder
   for (let i = 0; i < 7; i++) {
     if (matrix[n - 1 - i][8] === 0) setModule(matrix, n - 1 - i, 8, false);
+    isFunc[n - 1 - i][8] = 1;
   }
   // Dark module
   setModule(matrix, n - 8, 8, true);
+  isFunc[n - 8][8] = 1;
 }
 
 function placeData(matrix, bits) {
@@ -166,13 +183,13 @@ function placeData(matrix, bits) {
   }
 }
 
-function applyMask(matrix, maskFn) {
+function applyMask(matrix, isFunc, maskFn) {
   const n = matrix.length;
   const result = matrix.map(row => Int8Array.from(row));
   for (let r = 0; r < n; r++) {
     for (let c = 0; c < n; c++) {
-      // Only mask data modules (non-reserved: |val| stored as 1/-1 from placement)
-      if (matrix[r][c] !== 0 && maskFn(r, c)) {
+      // Only mask data modules — skip function pattern cells
+      if (!isFunc[r][c] && matrix[r][c] !== 0 && maskFn(r, c)) {
         result[r][c] = result[r][c] === 1 ? -1 : 1;
       }
     }
@@ -323,13 +340,14 @@ export function generateQrSvg(text, options = {}) {
     }
   }
 
-  // Build matrix
+  // Build matrix and function-pattern tracking matrix
   const matrix = createMatrix(size);
+  const isFunc = createFuncMatrix(size);
 
   // Finder patterns
-  addFinderPattern(matrix, 0, 0);
-  addFinderPattern(matrix, 0, size - 7);
-  addFinderPattern(matrix, size - 7, 0);
+  addFinderPattern(matrix, isFunc, 0, 0);
+  addFinderPattern(matrix, isFunc, 0, size - 7);
+  addFinderPattern(matrix, isFunc, size - 7, 0);
 
   // Alignment patterns
   const alignPos = ALIGN_POS[version];
@@ -340,13 +358,13 @@ export function generateQrSvg(text, options = {}) {
         if (r <= 8 && c <= 8) continue;
         if (r <= 8 && c >= size - 9) continue;
         if (r >= size - 9 && c <= 8) continue;
-        addAlignmentPattern(matrix, r, c);
+        addAlignmentPattern(matrix, isFunc, r, c);
       }
     }
   }
 
-  addTimingPatterns(matrix);
-  reserveFormatArea(matrix);
+  addTimingPatterns(matrix, isFunc);
+  reserveFormatArea(matrix, isFunc);
 
   // Place data
   placeData(matrix, allBits);
@@ -356,7 +374,7 @@ export function generateQrSvg(text, options = {}) {
   let bestScore = Infinity;
   let bestMask = 0;
   for (let m = 0; m < 8; m++) {
-    const masked = applyMask(matrix, MASKS[m]);
+    const masked = applyMask(matrix, isFunc, MASKS[m]);
     const mCopy = masked.map(row => Int8Array.from(row));
     writeFormatBits(mCopy, m);
     const score = scoreMask(mCopy);
