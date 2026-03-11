@@ -11,7 +11,10 @@
 </head>
 <body>
   <header class="app-header">
-    <h1>Card Maker</h1>
+    <div class="header-left">
+      <button id="sidebar-toggle" class="btn sidebar-toggle" aria-label="Toggle sidebar">&#9776;</button>
+      <h1>Card Maker</h1>
+    </div>
     <div class="header-actions">
       <div class="view-toggle">
         <button class="btn view-btn active" data-view="cards">Cards</button>
@@ -26,8 +29,9 @@
     </div>
   </header>
 
+  <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
   <div class="app-layout">
-    <aside class="sidebar">
+    <aside class="sidebar" id="sidebar">
       <section class="sidebar-section">
         <h2>Card Type</h2>
         <select id="card-type-select">

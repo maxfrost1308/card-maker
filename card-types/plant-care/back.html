@@ -27,11 +27,13 @@
 
   {{#link}}
   <div class="pc-link-section">
+    <div class="pc-qr">{{{qr:link}}}</div>
     <a class="pc-link" href="{{link}}" target="_blank">More Info</a>
   </div>
   {{/link}}
 
   <div class="pc-back-footer">
+    {{#icon}}<div class="pc-back-icon">{{{icon:icon}}}</div>{{/icon}}
     <span class="pc-category-small">{{category}}</span>
   </div>
 </div>
