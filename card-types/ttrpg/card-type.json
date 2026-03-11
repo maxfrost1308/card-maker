@@ -1,0 +1,106 @@
+{
+  "id": "ttrpg",
+  "name": "TTRPG Cards",
+  "description": "Reference cards for tabletop role-playing games. Front shows pitch and hook, back shows specs and QR code.",
+  "cardSize": {
+    "width": "63.5mm",
+    "height": "88.9mm"
+  },
+  "fields": [
+    {
+      "key": "name",
+      "label": "Game Name",
+      "type": "text",
+      "required": true
+    },
+    {
+      "key": "genres",
+      "label": "Genres",
+      "type": "multi-select",
+      "separator": "|",
+      "options": ["fantasy", "sci-fi", "horror", "dark", "modern", "romance", "mystery", "weird", "gonzo", "cozy", "drama", "comedy", "supernatural", "any"],
+      "pillColors": {
+        "fantasy": "#6a4c93",
+        "sci-fi": "#2e86ab",
+        "horror": "#8b1a1a",
+        "dark": "#444444",
+        "modern": "#5b7553",
+        "romance": "#c44569",
+        "mystery": "#3c3c6e",
+        "weird": "#b8560b",
+        "gonzo": "#e07b00",
+        "cozy": "#7bb369",
+        "drama": "#7a5195",
+        "comedy": "#d4a017",
+        "supernatural": "#6b4c8a",
+        "any": "#666666"
+      }
+    },
+    {
+      "key": "hook",
+      "label": "The Hook",
+      "type": "text",
+      "required": true,
+      "maxLength": 250
+    },
+    {
+      "key": "like",
+      "label": "Play This If You Like...",
+      "type": "text",
+      "maxLength": 200
+    },
+    {
+      "key": "components",
+      "label": "Components Needed",
+      "type": "text"
+    },
+    {
+      "key": "players",
+      "label": "Players",
+      "type": "text"
+    },
+    {
+      "key": "duration",
+      "label": "Duration (min)",
+      "type": "text"
+    },
+    {
+      "key": "gm_style",
+      "label": "GM Style",
+      "type": "select",
+      "options": ["GM-led", "Facilitated", "GM-less", "Solo"]
+    },
+    {
+      "key": "product_type",
+      "label": "Product Type",
+      "type": "select",
+      "options": ["Story Game", "Traditional RPG", "OSR", "Narrative RPG", "LARP", "Board Game Hybrid"]
+    },
+    {
+      "key": "format",
+      "label": "Format",
+      "type": "select",
+      "options": ["Pamphlet", "Zine", "Full Book", "Single Page", "Business Card", "Digital Only"]
+    },
+    {
+      "key": "back_color",
+      "label": "Back Color",
+      "type": "text"
+    },
+    {
+      "key": "icon",
+      "label": "Icon",
+      "type": "image"
+    },
+    {
+      "key": "qr_code",
+      "label": "QR Code",
+      "type": "image"
+    },
+    {
+      "key": "link",
+      "label": "Link",
+      "type": "url"
+    }
+  ]
+}

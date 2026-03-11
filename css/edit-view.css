@@ -100,23 +100,8 @@
   font-size: 0.85rem;
 }
 
-.edit-multi-select {
+.edit-field .tag-picker {
   border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 8px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 14px;
-}
-
-.edit-checkbox-label {
-  display: flex !important;
-  align-items: center;
-  gap: 4px;
-  font-size: 0.85rem !important;
-  font-weight: 400 !important;
-  color: var(--text) !important;
-  cursor: pointer;
 }
 
 .edit-modal-footer {
