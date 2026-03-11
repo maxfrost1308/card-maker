@@ -34,18 +34,14 @@ export function parseCsv(input) {
 
 /**
  * Generate a CSV string from a card type's fields (for template/sample downloads).
- * Uses field labels as column headers for human readability.
+ * Uses field keys as column headers (matching the internal data model).
  * @param {Object[]} fields - Schema fields array
  * @param {Object[]} [sampleRows] - Optional sample data rows
  * @returns {string} CSV string
  */
 export function generateCsv(fields, sampleRows) {
   const keys = fields.map(f => f.key);
-  const labels = fields.map(f => f.label || f.key);
-  const lines = [labels.map(l => {
-    if (l.includes(',') || l.includes('"')) return '"' + l.replace(/"/g, '""') + '"';
-    return l;
-  }).join(',')];
+  const lines = [keys.join(',')];
 
   if (sampleRows) {
     for (const row of sampleRows) {

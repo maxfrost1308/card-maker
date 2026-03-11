@@ -3,7 +3,7 @@
  */
 import { getData, setRowData, getActiveCardType, rerenderActiveView } from './ui.js';
 import { showToast } from './ui.js';
-import { createPillPicker } from './table-view.js';
+import { createPillPicker, createTagPicker } from './table-view.js';
 
 let currentEditIndex = null;
 let initialized = false;
@@ -76,8 +76,8 @@ export function openEditModal(rowIndex) {
   // Build form
   body.innerHTML = '';
   for (const field of fields) {
-    // Skip verified_fields from the form — it's managed via checkboxes
-    if (field.key === 'verified_fields') continue;
+    // Skip hidden fields (verified_fields, back_color, etc.)
+    if (field.hidden) continue;
 
     const wrapper = document.createElement('div');
     wrapper.className = 'edit-field';
@@ -89,44 +89,48 @@ export function openEditModal(rowIndex) {
     const label = document.createElement('label');
     label.textContent = (field.label || field.key) + (field.required ? ' *' : '');
 
-    const verifyCheckbox = document.createElement('input');
-    verifyCheckbox.type = 'checkbox';
-    verifyCheckbox.className = 'edit-verify-checkbox';
-    verifyCheckbox.dataset.verifyKey = field.key;
-    verifyCheckbox.checked = verifiedSet.has(field.key);
-    verifyCheckbox.title = 'Mark as verified';
-    verifyCheckbox.addEventListener('change', () => {
-      wrapper.classList.toggle('verified', verifyCheckbox.checked);
-    });
-
     labelRow.appendChild(label);
-    labelRow.appendChild(verifyCheckbox);
+
+    // Only show verify checkbox if field is marked verifiable in schema
+    if (field.verifiable) {
+      const verifyCheckbox = document.createElement('input');
+      verifyCheckbox.type = 'checkbox';
+      verifyCheckbox.className = 'edit-verify-checkbox';
+      verifyCheckbox.dataset.verifyKey = field.key;
+      verifyCheckbox.checked = verifiedSet.has(field.key);
+      verifyCheckbox.title = 'Mark as verified';
+      verifyCheckbox.addEventListener('change', () => {
+        wrapper.classList.toggle('verified', verifyCheckbox.checked);
+      });
+      labelRow.appendChild(verifyCheckbox);
+    }
+
     wrapper.appendChild(labelRow);
 
     const value = row[field.key] || '';
 
     if (field.type === 'select' && field.options) {
-      const select = document.createElement('select');
-      select.dataset.fieldKey = field.key;
-
-      const emptyOpt = document.createElement('option');
-      emptyOpt.value = '';
-      emptyOpt.textContent = '--';
-      select.appendChild(emptyOpt);
-
-      for (const opt of field.options) {
-        const option = document.createElement('option');
-        option.value = opt;
-        option.textContent = opt;
-        if (opt === value) option.selected = true;
-        select.appendChild(option);
-      }
-      wrapper.appendChild(select);
+      // Use pill picker for single-select (click to choose)
+      const picker = createPillPicker(
+        { ...field, type: 'multi-select' },
+        value ? [value] : [],
+        () => {}
+      );
+      picker.dataset.fieldKey = field.key;
+      picker.dataset.selectType = 'single';
+      wrapper.appendChild(picker);
 
     } else if (field.type === 'multi-select' && field.options) {
       const sep = field.separator || '|';
       const selected = typeof value === 'string' ? value.split(sep).map(v => v.trim()).filter(Boolean) : [];
       const picker = createPillPicker(field, selected, () => {});
+      picker.dataset.fieldKey = field.key;
+      wrapper.appendChild(picker);
+
+    } else if (field.type === 'tags') {
+      const sep = field.separator || '|';
+      const selected = typeof value === 'string' ? value.split(sep).map(v => v.trim()).filter(Boolean) : [];
+      const picker = createTagPicker(field, selected, () => {}, data);
       picker.dataset.fieldKey = field.key;
       wrapper.appendChild(picker);
 
@@ -161,10 +165,30 @@ function saveCurrentEdit() {
 
   const verifiedKeys = [];
   for (const field of cardType.fields) {
-    if (field.key === 'verified_fields') continue;
+    // Hidden fields: preserve existing values
+    if (field.hidden) {
+      const data = getData() || cardType.sampleData;
+      if (data && data[currentEditIndex]) {
+        newRow[field.key] = data[currentEditIndex][field.key] || '';
+      }
+      continue;
+    }
 
-    if (field.type === 'multi-select') {
+    if (field.type === 'select') {
+      // Single-select uses pill picker; take last selected value
       const picker = body.querySelector(`.pill-picker[data-field-key="${field.key}"]`);
+      if (picker) {
+        const vals = picker._selectedValues || [];
+        newRow[field.key] = vals.length > 0 ? vals[vals.length - 1] : '';
+      }
+    } else if (field.type === 'multi-select') {
+      const picker = body.querySelector(`.pill-picker[data-field-key="${field.key}"]`);
+      if (picker) {
+        const sep = field.separator || '|';
+        newRow[field.key] = (picker._selectedValues || []).join(sep);
+      }
+    } else if (field.type === 'tags') {
+      const picker = body.querySelector(`.tag-picker[data-field-key="${field.key}"]`);
       if (picker) {
         const sep = field.separator || '|';
         newRow[field.key] = (picker._selectedValues || []).join(sep);
@@ -174,8 +198,10 @@ function saveCurrentEdit() {
       newRow[field.key] = el ? el.value : '';
     }
 
-    const cb = body.querySelector(`.edit-verify-checkbox[data-verify-key="${field.key}"]`);
-    if (cb?.checked) verifiedKeys.push(field.key);
+    if (field.verifiable) {
+      const cb = body.querySelector(`.edit-verify-checkbox[data-verify-key="${field.key}"]`);
+      if (cb?.checked) verifiedKeys.push(field.key);
+    }
   }
   newRow.verified_fields = verifiedKeys.join('|');
 

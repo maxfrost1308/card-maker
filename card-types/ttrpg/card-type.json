@@ -6,91 +6,126 @@
     "width": "63.5mm",
     "height": "88.9mm"
   },
+  "colorMapping": {
+    "back_color": {
+      "field": "complexity",
+      "map": {
+        "Easy": "#7bb369",
+        "Medium": "#d4a017",
+        "Hard": "#c0392b"
+      },
+      "default": "#607d8b"
+    }
+  },
+  "aggregations": [
+    { "field": "digital_buy", "value": "Bought", "label": "Digitally Owned" },
+    { "field": "to_play", "value": "Played", "label": "Played" }
+  ],
   "fields": [
     {
       "key": "title",
       "label": "Title",
       "type": "text",
-      "required": true
+      "required": true,
+      "verifiable": true
     },
     {
       "key": "mechanical_style",
       "label": "Mechanical Style",
-      "type": "text"
+      "type": "select",
+      "options": ["Classic", "Traditional", "OSR", "Story Game", "Tactical", "Creative Writing", "Worldbuilding", "Parlour Game"],
+      "verifiable": true
     },
     {
       "key": "product_type",
       "label": "Product Type",
       "type": "select",
-      "options": ["Story Game", "Traditional RPG", "OSR", "Narrative RPG", "LARP", "Board Game Hybrid"]
+      "options": ["TTRPG", "Board Game", "Card Game", "Box Set", "Zine", "Pamphlet"],
+      "verifiable": true
     },
     {
       "key": "genre",
       "label": "Genre",
       "type": "multi-select",
       "separator": "|",
-      "options": ["fantasy", "sci-fi", "horror", "dark", "modern", "romance", "mystery", "weird", "gonzo", "cozy", "drama", "comedy", "supernatural", "any"],
+      "options": ["Fantasy", "Sci-Fi", "Dark", "Modern", "Real-World", "Romance", "Mystery", "Weird", "Gonzo", "Cozy", "Drama", "Supernatural", "Music", "Any"],
       "pillColors": {
-        "fantasy": "#6a4c93",
-        "sci-fi": "#2e86ab",
-        "horror": "#8b1a1a",
-        "dark": "#444444",
-        "modern": "#5b7553",
-        "romance": "#c44569",
-        "mystery": "#3c3c6e",
-        "weird": "#b8560b",
-        "gonzo": "#e07b00",
-        "cozy": "#7bb369",
-        "drama": "#7a5195",
-        "comedy": "#d4a017",
-        "supernatural": "#6b4c8a",
-        "any": "#666666"
-      }
+        "Fantasy": "#6a4c93",
+        "Sci-Fi": "#2e86ab",
+        "Dark": "#444444",
+        "Modern": "#5b7553",
+        "Real-World": "#8b7355",
+        "Romance": "#c44569",
+        "Mystery": "#3c3c6e",
+        "Weird": "#b8560b",
+        "Gonzo": "#e07b00",
+        "Cozy": "#7bb369",
+        "Drama": "#7a5195",
+        "Supernatural": "#6b4c8a",
+        "Music": "#e91e63",
+        "Any": "#666666"
+      },
+      "verifiable": true
     },
     {
       "key": "players",
       "label": "Players",
-      "type": "text"
+      "type": "text",
+      "verifiable": true
     },
     {
       "key": "time",
       "label": "Time (min)",
-      "type": "text"
+      "type": "text",
+      "verifiable": true
     },
     {
       "key": "complexity",
       "label": "Complexity",
-      "type": "text"
+      "type": "select",
+      "options": ["Easy", "Medium", "Hard"],
+      "pillColors": {
+        "Easy": "#7bb369",
+        "Medium": "#d4a017",
+        "Hard": "#c0392b"
+      },
+      "verifiable": true
     },
     {
       "key": "gm_structure",
       "label": "GM Structure",
       "type": "select",
-      "options": ["GM-led", "Facilitated", "GM-less", "Solo"]
+      "options": ["GM-led", "Facilitated", "GM-less", "Solo"],
+      "verifiable": true
     },
     {
       "key": "campaign_type",
       "label": "Campaign Type",
-      "type": "select",
-      "options": ["One-Shot", "Short", "Long"]
+      "type": "multi-select",
+      "separator": "|",
+      "options": ["One-Shot", "Short", "Long"],
+      "verifiable": true
     },
     {
       "key": "hook",
       "label": "The Hook",
       "type": "text",
       "required": true,
-      "maxLength": 250
+      "maxLength": 250,
+      "verifiable": true
     },
     {
       "key": "if_you_like",
       "label": "Play This If You Like...",
       "type": "text",
-      "maxLength": 200
+      "maxLength": 200,
+      "verifiable": true
     },
     {
       "key": "bg_icon",
       "label": "Background Icon",
-      "type": "icon"
+      "type": "icon",
+      "verifiable": true
     },
     {
       "key": "components",
@@ -114,22 +149,26 @@
         "One page RPG",
         "No components",
         "Specialty"
-      ]
+      ],
+      "verifiable": true
     },
     {
       "key": "link",
       "label": "Link",
-      "type": "url"
+      "type": "url",
+      "verifiable": true
     },
     {
       "key": "back_color",
       "label": "Back Color",
-      "type": "text"
+      "type": "text",
+      "hidden": true
     },
     {
       "key": "verified_fields",
       "label": "Verified Fields",
-      "type": "text"
+      "type": "text",
+      "hidden": true
     },
     {
       "key": "to_play",
@@ -164,7 +203,8 @@
     {
       "key": "collections",
       "label": "Collections",
-      "type": "text"
+      "type": "tags",
+      "separator": "|"
     }
   ]
 }

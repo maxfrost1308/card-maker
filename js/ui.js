@@ -202,7 +202,7 @@ export async function renderCards(cardType, rows) {
     frontWrapper.style.width = width;
     frontWrapper.style.height = height;
     frontWrapper.dataset.cardType = cardType.id;
-    frontWrapper.innerHTML = renderCard(cardType.frontTemplate, row, cardType.fields);
+    frontWrapper.innerHTML = renderCard(cardType.frontTemplate, row, cardType.fields, cardType);
     pair.appendChild(frontWrapper);
 
     // Back
@@ -212,7 +212,7 @@ export async function renderCards(cardType, rows) {
       backWrapper.style.width = width;
       backWrapper.style.height = height;
       backWrapper.dataset.cardType = cardType.id;
-      backWrapper.innerHTML = renderCard(cardType.backTemplate, row, cardType.fields);
+      backWrapper.innerHTML = renderCard(cardType.backTemplate, row, cardType.fields, cardType);
       pair.appendChild(backWrapper);
     }
 

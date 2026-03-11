@@ -60,17 +60,17 @@
 /* Genre colors */
 .genre-fantasy { background: #6a4c93; }
 .genre-sci-fi { background: #2e86ab; }
-.genre-horror { background: #8b1a1a; }
 .genre-dark { background: #444; }
 .genre-modern { background: #5b7553; }
+.genre-real-world { background: #8b7355; }
 .genre-romance { background: #c44569; }
 .genre-mystery { background: #3c3c6e; }
 .genre-weird { background: #b8560b; }
 .genre-gonzo { background: #e07b00; }
 .genre-cozy { background: #7bb369; }
 .genre-drama { background: #7a5195; }
-.genre-comedy { background: #d4a017; }
 .genre-supernatural { background: #6b4c8a; }
+.genre-music { background: #e91e63; }
 .genre-any { background: #666; }
 
 .ttrpg-body {

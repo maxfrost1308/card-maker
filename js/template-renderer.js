@@ -22,17 +22,18 @@ function escapeHtml(str) {
 
 /**
  * Preprocess a CSV row object using the card type schema.
- * - Multi-select fields are split into arrays.
+ * - Multi-select / tags fields are split into arrays.
  * - Adds lowercased variants (field_lower) for CSS class hooks.
+ * - Applies colorMapping from the card type to derive field values.
  */
-export function preprocessRow(row, fields) {
+export function preprocessRow(row, fields, cardType) {
   const data = {};
   for (const field of fields) {
     let val = row[field.key];
     if (val === undefined || val === null) val = '';
     if (typeof val === 'string') val = val.trim();
 
-    if (field.type === 'multi-select' && typeof val === 'string' && val.length > 0) {
+    if ((field.type === 'multi-select' || field.type === 'tags') && typeof val === 'string' && val.length > 0) {
       const sep = field.separator || '|';
       data[field.key] = val.split(sep).map(v => v.trim()).filter(Boolean);
     } else {
@@ -55,6 +56,19 @@ export function preprocessRow(row, fields) {
       }
     }
   }
+
+  // Apply colorMapping from card type schema
+  if (cardType && cardType.colorMapping) {
+    for (const [targetField, mapping] of Object.entries(cardType.colorMapping)) {
+      // Only derive if the target field is empty/missing in this row
+      if (!data[targetField] || data[targetField] === '') {
+        const sourceVal = data[mapping.field];
+        const sourceStr = Array.isArray(sourceVal) ? sourceVal[0] : String(sourceVal || '');
+        data[targetField] = mapping.map[sourceStr] || mapping.default || '';
+      }
+    }
+  }
+
   return data;
 }
 
@@ -98,10 +112,8 @@ export function renderTemplate(template, data) {
       }
       return val.map((item, i) => {
         let out = inner;
-        // {{.}} = the value, {{@index}} = index
         out = out.replace(/\{\{\.\}\}/g, escapeHtml(item));
         out = out.replace(/\{\{@index\}\}/g, String(i));
-        // Also allow {{{.}}} for raw
         out = out.replace(/\{\{\{\.\}\}\}/g, String(item));
         return out;
       }).join('');
@@ -132,7 +144,7 @@ export function renderTemplate(template, data) {
 /**
  * Full card render pipeline: preprocess + render.
  */
-export function renderCard(template, row, fields) {
-  const data = preprocessRow(row, fields);
+export function renderCard(template, row, fields, cardType) {
+  const data = preprocessRow(row, fields, cardType);
   return renderTemplate(template, data);
 }

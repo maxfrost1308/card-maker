@@ -26,7 +26,7 @@ export function buildPrintLayout(cardType, rows) {
       wrapper.className = 'card-wrapper';
       wrapper.dataset.cardType = cardType.id;
       if (i < chunk.length) {
-        wrapper.innerHTML = renderCard(cardType.frontTemplate, chunk[i], cardType.fields);
+        wrapper.innerHTML = renderCard(cardType.frontTemplate, chunk[i], cardType.fields, cardType);
       }
       frontPage.appendChild(wrapper);
     }
@@ -48,7 +48,7 @@ export function buildPrintLayout(cardType, rows) {
           wrapper.className = 'card-wrapper';
           wrapper.dataset.cardType = cardType.id;
           if (idx < chunk.length) {
-            wrapper.innerHTML = renderCard(cardType.backTemplate, chunk[idx], cardType.fields);
+            wrapper.innerHTML = renderCard(cardType.backTemplate, chunk[idx], cardType.fields, cardType);
           }
           backPage.appendChild(wrapper);
         }
