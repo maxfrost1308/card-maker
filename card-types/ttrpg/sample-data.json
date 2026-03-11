@@ -11,9 +11,9 @@
     "product_type": "Story Game",
     "format": "Pamphlet",
     "back_color": "#6aab6a",
-    "icon": "",
-    "qr_code": "",
-    "link": ""
+    "icon": "https://game-icons.net/icons/ffffff/000000/1x1/delapouite/bear-head.svg",
+    "qr_code": "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://granthovverton.itch.io/honey-heist",
+    "link": "https://granthovverton.itch.io/honey-heist"
   },
   {
     "name": "Dungeons & Dragons 5e",
@@ -27,9 +27,9 @@
     "product_type": "Traditional RPG",
     "format": "Full Book",
     "back_color": "#7b2d26",
-    "icon": "",
-    "qr_code": "",
-    "link": ""
+    "icon": "https://game-icons.net/icons/ffffff/000000/1x1/lorc/swords-emblem.svg",
+    "qr_code": "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://www.dndbeyond.com",
+    "link": "https://www.dndbeyond.com"
   },
   {
     "name": "Call of Cthulhu",
@@ -43,9 +43,9 @@
     "product_type": "Traditional RPG",
     "format": "Full Book",
     "back_color": "#2c3e50",
-    "icon": "",
-    "qr_code": "",
-    "link": ""
+    "icon": "https://game-icons.net/icons/ffffff/000000/1x1/lorc/tentacles-skull.svg",
+    "qr_code": "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://www.chaosium.com/call-of-cthulhu-rpg/",
+    "link": "https://www.chaosium.com/call-of-cthulhu-rpg/"
   },
   {
     "name": "Blades in the Dark",
@@ -59,9 +59,9 @@
     "product_type": "Narrative RPG",
     "format": "Full Book",
     "back_color": "#34495e",
-    "icon": "",
-    "qr_code": "",
-    "link": ""
+    "icon": "https://game-icons.net/icons/ffffff/000000/1x1/lorc/daggers.svg",
+    "qr_code": "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://bladesinthedark.com",
+    "link": "https://bladesinthedark.com"
   },
   {
     "name": "Mothership",
@@ -75,9 +75,9 @@
     "product_type": "OSR",
     "format": "Zine",
     "back_color": "#1a1a2e",
-    "icon": "",
-    "qr_code": "",
-    "link": ""
+    "icon": "https://game-icons.net/icons/ffffff/000000/1x1/lorc/alien-skull.svg",
+    "qr_code": "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://www.mothershiprpg.com",
+    "link": "https://www.mothershiprpg.com"
   },
   {
     "name": "Fiasco",
@@ -91,8 +91,8 @@
     "product_type": "Story Game",
     "format": "Full Book",
     "back_color": "#8e44ad",
-    "icon": "",
-    "qr_code": "",
-    "link": ""
+    "icon": "https://game-icons.net/icons/ffffff/000000/1x1/lorc/drama-masks.svg",
+    "qr_code": "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://bullypulpitgames.com/fiasco/",
+    "link": "https://bullypulpitgames.com/fiasco/"
   }
 ]
