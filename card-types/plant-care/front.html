@@ -1,6 +1,9 @@
 <div class="pc-card pc-front" data-card-type="plant-care" data-difficulty="{{difficulty_lower}}">
   <div class="pc-header">
-    <div class="pc-category-badge">{{category}}</div>
+    <div class="pc-header-top">
+      <div class="pc-category-badge">{{category}}</div>
+      {{#icon}}<div class="pc-icon">{{{icon:icon}}}</div>{{/icon}}
+    </div>
     <h1 class="pc-name">{{name}}</h1>
     {{#botanical}}<p class="pc-botanical">{{botanical}}</p>{{/botanical}}
   </div>

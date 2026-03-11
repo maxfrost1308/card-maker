@@ -7,7 +7,12 @@
  *   {{#field}}...{{.}}...{{/field}}  — iterate over array (multi-select fields)
  *   {{#field}}...{{/field}}          — conditional block (truthy non-array fields)
  *   {{^field}}...{{/field}}          — inverted block (falsy/empty fields)
+ *   {{{icon:field}}}                 — inline SVG icon from cached icon data
+ *   {{{qr:field}}}                   — inline QR code SVG from field value
  */
+
+import { getCachedIcon } from './icon-loader.js';
+import { generateQrSvg } from './qr-code.js';
 
 const ESC_MAP = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
 
@@ -58,6 +63,21 @@ export function preprocessRow(row, fields) {
  */
 export function renderTemplate(template, data) {
   let html = template;
+
+  // 0a. Icon substitution: {{{icon:field}}}
+  html = html.replace(/\{\{\{icon:(\w+)\}\}\}/g, (_, key) => {
+    const val = data[key];
+    if (!val) return '';
+    const svg = getCachedIcon(val);
+    return svg || `<span class="icon-placeholder" data-icon="${escapeHtml(String(val))}"></span>`;
+  });
+
+  // 0b. QR code substitution: {{{qr:field}}}
+  html = html.replace(/\{\{\{qr:(\w+)\}\}\}/g, (_, key) => {
+    const val = data[key];
+    if (!val) return '';
+    return generateQrSvg(String(val));
+  });
 
   // 1. Inverted blocks: {{^field}}...{{/field}}
   html = html.replace(/\{\{\^(\w+)\}\}([\s\S]*?)\{\{\/\1\}\}/g, (_, key, inner) => {
