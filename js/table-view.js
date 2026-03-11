@@ -104,6 +104,11 @@ export function renderTable(cardType, rows) {
   const thead = document.createElement('thead');
   const headerRow = document.createElement('tr');
 
+  // Edit column header (empty)
+  const editTh = document.createElement('th');
+  editTh.className = 'edit-col';
+  headerRow.appendChild(editTh);
+
   // Select-all checkbox column
   const selectAllTh = document.createElement('th');
   selectAllTh.className = 'select-col';
@@ -151,6 +156,9 @@ export function renderTable(cardType, rows) {
   // Thead — filter row
   const filterRow = document.createElement('tr');
   filterRow.className = 'filter-row';
+
+  // Empty cell for edit column
+  filterRow.appendChild(document.createElement('td'));
 
   // Empty cell for checkbox column
   filterRow.appendChild(document.createElement('td'));
@@ -354,6 +362,11 @@ function startCellEdit(td, rowIdx, field) {
     }
 
     select.addEventListener('change', () => commitCellEdit());
+    select.addEventListener('blur', () => {
+      setTimeout(() => {
+        if (activeEditCell === td) commitCellEdit();
+      }, 100);
+    });
     select.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') cancelCellEdit(td, rowIdx, field);
     });
@@ -388,6 +401,17 @@ function startCellEdit(td, rowIdx, field) {
     });
     panel.appendChild(doneBtn);
     td.appendChild(panel);
+
+    // Click outside to save (Excel-like behavior)
+    const outsideHandler = (e) => {
+      if (!td.contains(e.target)) {
+        document.removeEventListener('mousedown', outsideHandler, true);
+        if (activeEditCell === td) commitCellEdit();
+      }
+    };
+    setTimeout(() => {
+      document.addEventListener('mousedown', outsideHandler, true);
+    }, 0);
 
   } else {
     const input = document.createElement('input');
@@ -514,6 +538,21 @@ function rebuildTbody() {
   tbody.innerHTML = '';
   for (const idx of indices) {
     const tr = document.createElement('tr');
+
+    // Edit button cell
+    const editTd = document.createElement('td');
+    editTd.className = 'edit-col';
+    const editBtn = document.createElement('button');
+    editBtn.className = 'table-edit-btn';
+    editBtn.textContent = '\u270E';
+    editBtn.title = 'Edit this row';
+    editBtn.type = 'button';
+    editBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openEditModal(idx);
+    });
+    editTd.appendChild(editBtn);
+    tr.appendChild(editTd);
 
     // Checkbox cell
     const cbTd = document.createElement('td');
