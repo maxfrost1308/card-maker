@@ -455,8 +455,8 @@ function commitCellEdit() {
   }
 
   const row = { ...currentRows[rowIdx], [field.key]: newValue };
-  setRowData(rowIdx, row);
   currentRows[rowIdx] = row;
+  setRowData(rowIdx, row);
 
   td.classList.remove('cell-editing');
   delete td._editCtx;

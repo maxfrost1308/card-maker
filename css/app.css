@@ -112,7 +112,6 @@ html { font-family: system-ui, -apple-system, sans-serif; color: var(--text); ba
 .main-area {
   flex: 1;
   padding: 20px;
-  overflow-y: auto;
 }
 
 /* ===== Card Grid ===== */

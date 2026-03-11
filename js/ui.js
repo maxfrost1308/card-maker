@@ -38,7 +38,7 @@ const hasFSAPI = 'showOpenFilePicker' in window;
 
 // State accessors for external modules
 export function getData() { return currentData; }
-export function setRowData(index, row) { currentData[index] = row; }
+export function setRowData(index, row) { if (currentData) currentData[index] = row; }
 export function getActiveCardType() { return registry.get(cardTypeSelect.value); }
 export function deleteRows(indices) {
   if (!currentData) return;
