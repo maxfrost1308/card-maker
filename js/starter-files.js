@@ -14,7 +14,8 @@ export function getStarterSchema() {
       { key: 'tags', label: 'Tags', type: 'multi-select', separator: '|', options: ['Tag1', 'Tag2', 'Tag3', 'Tag4'], pillColors: { 'Tag1': '#2980b9', 'Tag2': '#8e44ad', 'Tag3': '#27ae60', 'Tag4': '#e67e22' } },
       { key: 'description', label: 'Description', type: 'text', maxLength: 200 },
       { key: 'count', label: 'Count', type: 'number' },
-      { key: 'link', label: 'Link', type: 'url' }
+      { key: 'link', label: 'Link', type: 'url' },
+      { key: 'icon', label: 'Icon', type: 'icon' }
     ]
   }, null, 2);
 }
@@ -27,6 +28,8 @@ export function getStarterFront() {
 <!--   {{#field}}...{{/field}}  — section (truthy/array) -->
 <!--   {{^field}}...{{/field}}  — inverted section (falsy/empty) -->
 <!--   {{field_lower}}          — lowercase, hyphenated variant for CSS classes -->
+<!--   {{{icon:field}}}        — inline SVG icon (game-icons.net or URL) -->
+<!--   {{{qr:field}}}          — inline QR code SVG from field value -->
 
 <div class="card-front" data-card-type="my-cards">
   <h2 class="card-title">{{title}}</h2>
