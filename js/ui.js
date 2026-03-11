@@ -9,6 +9,9 @@ import { parseCsv, generateCsv } from './csv-parser.js';
 const cardTypeSelect = document.getElementById('card-type-select');
 const cardTypeDesc = document.getElementById('card-type-desc');
 const csvUpload = document.getElementById('csv-upload');
+const openCsvBtn = document.getElementById('open-csv-btn');
+const csvFilename = document.getElementById('csv-filename');
+const saveBtn = document.getElementById('save-btn');
 const downloadSample = document.getElementById('download-sample');
 const downloadTemplate = document.getElementById('download-template');
 const fieldReference = document.getElementById('field-reference');
@@ -24,7 +27,9 @@ const customBack = document.getElementById('custom-back');
 const customCss = document.getElementById('custom-css');
 const customUploadBtn = document.getElementById('custom-upload-btn');
 
-let currentData = null; // parsed CSV rows
+let currentData = null;        // parsed CSV rows
+let fileHandle = null;         // File System Access API handle (Chromium only)
+const hasFSAPI = 'showOpenFilePicker' in window;
 
 /**
  * Populate the card type dropdown with all registered types.
@@ -182,40 +187,159 @@ function downloadFile(filename, content) {
   URL.revokeObjectURL(url);
 }
 
+// ===== File System Access API helpers =====
+
+/**
+ * Open a CSV file via the File System Access API picker.
+ * Falls back to clicking the hidden <input type="file">.
+ */
+async function openCsvWithPicker() {
+  if (!hasFSAPI) {
+    csvUpload.click();
+    return;
+  }
+
+  try {
+    const [handle] = await window.showOpenFilePicker({
+      types: [{
+        description: 'CSV files',
+        accept: { 'text/csv': ['.csv'], 'text/plain': ['.tsv', '.txt'] },
+      }],
+      multiple: false,
+    });
+    fileHandle = handle;
+    const file = await handle.getFile();
+    await loadCsvFile(file, handle.name);
+  } catch (err) {
+    if (err.name !== 'AbortError') {
+      showToast('Failed to open file: ' + err.message, 'error');
+    }
+  }
+}
+
+/**
+ * Load and parse a CSV file, update state and UI.
+ */
+async function loadCsvFile(file, displayName) {
+  const ct = registry.get(cardTypeSelect.value);
+  if (!ct) {
+    showToast('Please select a card type first.', 'error');
+    return;
+  }
+
+  const { data, errors } = await parseCsv(file);
+  if (errors.length > 0) {
+    showToast(`CSV warnings: ${errors[0]}`, 'error');
+  }
+  if (data.length === 0) {
+    showToast('CSV is empty or could not be parsed.', 'error');
+    return;
+  }
+
+  currentData = data;
+  renderCards(ct, data);
+  updateSaveState();
+  showFilename(displayName || file.name);
+  showToast(`Loaded ${data.length} card(s).`, 'success');
+}
+
+/**
+ * Save the current data back to the open file handle.
+ */
+async function saveToFile() {
+  const ct = registry.get(cardTypeSelect.value);
+  if (!ct || !currentData) {
+    showToast('Nothing to save.', 'error');
+    return;
+  }
+
+  const csvString = generateCsv(ct.fields, currentData);
+
+  // If we have a file handle from the File System Access API, write directly
+  if (fileHandle) {
+    try {
+      const writable = await fileHandle.createWritable();
+      await writable.write(csvString);
+      await writable.close();
+      showToast(`Saved to ${fileHandle.name}`, 'success');
+      return;
+    } catch (err) {
+      if (err.name === 'AbortError') return;
+      showToast('Save failed: ' + err.message, 'error');
+      return;
+    }
+  }
+
+  // Fallback: trigger a download
+  downloadFile(`${ct.id}-data.csv`, csvString);
+  showToast('Downloaded CSV (use "Open CSV" for direct save).', 'success');
+}
+
+/**
+ * Update the Save button's enabled/disabled state.
+ */
+function updateSaveState() {
+  saveBtn.disabled = !currentData;
+  saveBtn.title = fileHandle
+    ? `Save to ${fileHandle.name} (Ctrl+S)`
+    : currentData
+      ? 'Download CSV (Ctrl+S)'
+      : 'No data loaded';
+}
+
+/**
+ * Show the currently open filename in the sidebar.
+ */
+function showFilename(name) {
+  if (name) {
+    csvFilename.textContent = name;
+    csvFilename.style.display = 'block';
+  } else {
+    csvFilename.style.display = 'none';
+  }
+}
+
+/**
+ * Clear file handle and filename when switching card types.
+ */
+function clearFileState() {
+  fileHandle = null;
+  currentData = null;
+  csvUpload.value = '';
+  updateSaveState();
+  showFilename(null);
+}
+
 /**
  * Bind all event listeners.
  */
 export function bindEvents() {
   // Card type selection
   cardTypeSelect.addEventListener('change', () => {
-    currentData = null;
-    csvUpload.value = '';
+    clearFileState();
     selectCardType(cardTypeSelect.value);
   });
 
-  // CSV upload
+  // "Open CSV..." button — uses File System Access API when available
+  openCsvBtn.addEventListener('click', () => openCsvWithPicker());
+
+  // Fallback file input (used when FSAPI is unavailable, or as hidden trigger)
   csvUpload.addEventListener('change', async () => {
     const file = csvUpload.files[0];
     if (!file) return;
+    fileHandle = null; // classic input doesn't give us a handle
+    await loadCsvFile(file, file.name);
+  });
 
-    const ct = registry.get(cardTypeSelect.value);
-    if (!ct) {
-      showToast('Please select a card type first.', 'error');
-      return;
-    }
+  // Save button
+  saveBtn.addEventListener('click', () => saveToFile());
 
-    const { data, errors } = await parseCsv(file);
-    if (errors.length > 0) {
-      showToast(`CSV warnings: ${errors[0]}`, 'error');
+  // Ctrl+S / Cmd+S keyboard shortcut
+  document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+      e.preventDefault();
+      if (currentData) saveToFile();
     }
-    if (data.length === 0) {
-      showToast('CSV is empty or could not be parsed.', 'error');
-      return;
-    }
-
-    currentData = data;
-    renderCards(ct, data);
-    showToast(`Loaded ${data.length} card(s).`, 'success');
   });
 
   // Show/hide backs
@@ -228,6 +352,13 @@ export function bindEvents() {
 
   // Print
   printBtn.addEventListener('click', () => window.print());
+
+  // Hide raw file input when FSAPI is available (Open button is the primary UI)
+  if (hasFSAPI) {
+    csvUpload.style.display = 'none';
+  } else {
+    openCsvBtn.style.display = 'none';
+  }
 
   // Custom card type upload
   customUploadBtn.addEventListener('click', async () => {

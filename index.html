@@ -14,6 +14,7 @@
         <input type="checkbox" id="show-backs" checked>
         Show backs
       </label>
+      <button id="save-btn" class="btn btn-save" disabled title="Save CSV back to file (Ctrl+S)">Save</button>
       <button id="print-btn" class="btn btn-primary">Print / PDF</button>
     </div>
   </header>
@@ -30,7 +31,9 @@
 
       <section class="sidebar-section">
         <h2>Card Data (CSV)</h2>
+        <button id="open-csv-btn" class="btn csv-open-btn">Open CSV...</button>
         <input type="file" id="csv-upload" accept=".csv,.tsv,.txt">
+        <p id="csv-filename" class="csv-filename" style="display:none;"></p>
         <p class="help-text">Upload a CSV matching the selected card type's fields.</p>
         <a href="#" id="download-sample" class="help-link" style="display:none;">Download sample CSV</a>
         <a href="#" id="download-template" class="help-link" style="display:none;">Download blank template CSV</a>
