@@ -8,14 +8,25 @@
   },
   "fields": [
     {
-      "key": "name",
-      "label": "Game Name",
+      "key": "title",
+      "label": "Title",
       "type": "text",
       "required": true
     },
     {
-      "key": "genres",
-      "label": "Genres",
+      "key": "mechanical_style",
+      "label": "Mechanical Style",
+      "type": "text"
+    },
+    {
+      "key": "product_type",
+      "label": "Product Type",
+      "type": "select",
+      "options": ["Story Game", "Traditional RPG", "OSR", "Narrative RPG", "LARP", "Board Game Hybrid"]
+    },
+    {
+      "key": "genre",
+      "label": "Genre",
       "type": "multi-select",
       "separator": "|",
       "options": ["fantasy", "sci-fi", "horror", "dark", "modern", "romance", "mystery", "weird", "gonzo", "cozy", "drama", "comedy", "supernatural", "any"],
@@ -37,6 +48,33 @@
       }
     },
     {
+      "key": "players",
+      "label": "Players",
+      "type": "text"
+    },
+    {
+      "key": "time",
+      "label": "Time (min)",
+      "type": "text"
+    },
+    {
+      "key": "complexity",
+      "label": "Complexity",
+      "type": "text"
+    },
+    {
+      "key": "gm_structure",
+      "label": "GM Structure",
+      "type": "select",
+      "options": ["GM-led", "Facilitated", "GM-less", "Solo"]
+    },
+    {
+      "key": "campaign_type",
+      "label": "Campaign Type",
+      "type": "select",
+      "options": ["One-Shot", "Short", "Long"]
+    },
+    {
       "key": "hook",
       "label": "The Hook",
       "type": "text",
@@ -44,10 +82,15 @@
       "maxLength": 250
     },
     {
-      "key": "like",
+      "key": "if_you_like",
       "label": "Play This If You Like...",
       "type": "text",
       "maxLength": 200
+    },
+    {
+      "key": "bg_icon",
+      "label": "Background Icon",
+      "type": "icon"
     },
     {
       "key": "components",
@@ -55,32 +98,9 @@
       "type": "text"
     },
     {
-      "key": "players",
-      "label": "Players",
-      "type": "text"
-    },
-    {
-      "key": "duration",
-      "label": "Duration (min)",
-      "type": "text"
-    },
-    {
-      "key": "gm_style",
-      "label": "GM Style",
-      "type": "select",
-      "options": ["GM-led", "Facilitated", "GM-less", "Solo"]
-    },
-    {
-      "key": "product_type",
-      "label": "Product Type",
-      "type": "select",
-      "options": ["Story Game", "Traditional RPG", "OSR", "Narrative RPG", "LARP", "Board Game Hybrid"]
-    },
-    {
-      "key": "format",
-      "label": "Format",
-      "type": "select",
-      "options": ["Pamphlet", "Zine", "Full Book", "Single Page", "Business Card", "Digital Only"]
+      "key": "link",
+      "label": "Link",
+      "type": "url"
     },
     {
       "key": "back_color",
@@ -88,14 +108,44 @@
       "type": "text"
     },
     {
-      "key": "icon",
-      "label": "Icon",
-      "type": "icon"
+      "key": "verified_fields",
+      "label": "Verified Fields",
+      "type": "text"
     },
     {
-      "key": "link",
-      "label": "Link",
-      "type": "url"
+      "key": "to_play",
+      "label": "To Play",
+      "type": "select",
+      "options": ["ToPlay", "Played"]
+    },
+    {
+      "key": "to_run",
+      "label": "To Run",
+      "type": "select",
+      "options": ["ToRun", "Dropped", "Ran"]
+    },
+    {
+      "key": "digital_buy",
+      "label": "Digital Buy",
+      "type": "select",
+      "options": ["ToBuy", "Bought", "Dropped"]
+    },
+    {
+      "key": "digital_print",
+      "label": "Digital Print",
+      "type": "select",
+      "options": ["ToPrint", "Dropped", "Printed"]
+    },
+    {
+      "key": "physical_buy",
+      "label": "Physical Buy",
+      "type": "select",
+      "options": ["Dropped", "ToBuy", "Bought"]
+    },
+    {
+      "key": "collections",
+      "label": "Collections",
+      "type": "text"
     }
   ]
 }
