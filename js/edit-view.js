@@ -3,6 +3,7 @@
  */
 import { getData, setRowData, getActiveCardType, rerenderActiveView } from './ui.js';
 import { showToast } from './ui.js';
+import { createTagPicker } from './table-view.js';
 
 let currentEditIndex = null;
 let initialized = false;
@@ -44,8 +45,8 @@ export function initEditView() {
  * Open the edit modal for a given row index.
  */
 export function openEditModal(rowIndex) {
-  const data = getData();
   const cardType = getActiveCardType();
+  const data = getData() || cardType?.sampleData;
   if (!data || !cardType || rowIndex < 0 || rowIndex >= data.length) return;
 
   currentEditIndex = rowIndex;
@@ -98,25 +99,11 @@ export function openEditModal(rowIndex) {
       wrapper.appendChild(select);
 
     } else if (field.type === 'multi-select' && field.options) {
-      const fieldset = document.createElement('fieldset');
-      fieldset.className = 'edit-multi-select';
-      fieldset.dataset.fieldKey = field.key;
-
       const sep = field.separator || '|';
       const selected = typeof value === 'string' ? value.split(sep).map(v => v.trim()).filter(Boolean) : [];
-
-      for (const opt of field.options) {
-        const optLabel = document.createElement('label');
-        optLabel.className = 'edit-checkbox-label';
-        const cb = document.createElement('input');
-        cb.type = 'checkbox';
-        cb.value = opt;
-        if (selected.includes(opt)) cb.checked = true;
-        optLabel.appendChild(cb);
-        optLabel.appendChild(document.createTextNode(' ' + opt));
-        fieldset.appendChild(optLabel);
-      }
-      wrapper.appendChild(fieldset);
+      const picker = createTagPicker(field, selected, () => {});
+      picker.dataset.fieldKey = field.key;
+      wrapper.appendChild(picker);
 
     } else {
       const input = document.createElement('input');
@@ -149,11 +136,10 @@ function saveCurrentEdit() {
 
   for (const field of cardType.fields) {
     if (field.type === 'multi-select') {
-      const fieldset = body.querySelector(`fieldset[data-field-key="${field.key}"]`);
-      if (fieldset) {
+      const picker = body.querySelector(`.tag-picker[data-field-key="${field.key}"]`);
+      if (picker) {
         const sep = field.separator || '|';
-        const checked = Array.from(fieldset.querySelectorAll('input:checked')).map(cb => cb.value);
-        newRow[field.key] = checked.join(sep);
+        newRow[field.key] = (picker._selectedValues || []).join(sep);
       }
     } else {
       const el = body.querySelector(`[data-field-key="${field.key}"]`);
@@ -161,6 +147,8 @@ function saveCurrentEdit() {
     }
   }
 
+  const data = getData() || cardType.sampleData;
+  if (data) data[currentEditIndex] = newRow;
   setRowData(currentEditIndex, newRow);
   rerenderActiveView();
   closeEditModal();
@@ -171,7 +159,8 @@ function saveCurrentEdit() {
  * Navigate to prev/next card in the modal.
  */
 function navigateEdit(direction) {
-  const data = getData();
+  const cardType = getActiveCardType();
+  const data = getData() || cardType?.sampleData;
   if (!data) return;
   const newIndex = currentEditIndex + direction;
   if (newIndex >= 0 && newIndex < data.length) {
