@@ -68,15 +68,40 @@ export function openEditModal(rowIndex) {
   prevBtn.disabled = rowIndex === 0;
   nextBtn.disabled = rowIndex === data.length - 1;
 
+  // Parse verified fields
+  const verifiedSet = new Set(
+    (row.verified_fields || '').split('|').map(v => v.trim()).filter(Boolean)
+  );
+
   // Build form
   body.innerHTML = '';
   for (const field of fields) {
+    // Skip verified_fields from the form — it's managed via checkboxes
+    if (field.key === 'verified_fields') continue;
+
     const wrapper = document.createElement('div');
     wrapper.className = 'edit-field';
+    if (verifiedSet.has(field.key)) wrapper.classList.add('verified');
+
+    const labelRow = document.createElement('div');
+    labelRow.className = 'edit-field-label-row';
 
     const label = document.createElement('label');
     label.textContent = (field.label || field.key) + (field.required ? ' *' : '');
-    wrapper.appendChild(label);
+
+    const verifyCheckbox = document.createElement('input');
+    verifyCheckbox.type = 'checkbox';
+    verifyCheckbox.className = 'edit-verify-checkbox';
+    verifyCheckbox.dataset.verifyKey = field.key;
+    verifyCheckbox.checked = verifiedSet.has(field.key);
+    verifyCheckbox.title = 'Mark as verified';
+    verifyCheckbox.addEventListener('change', () => {
+      wrapper.classList.toggle('verified', verifyCheckbox.checked);
+    });
+
+    labelRow.appendChild(label);
+    labelRow.appendChild(verifyCheckbox);
+    wrapper.appendChild(labelRow);
 
     const value = row[field.key] || '';
 
@@ -134,7 +159,10 @@ function saveCurrentEdit() {
   const body = document.getElementById('edit-modal-body');
   const newRow = {};
 
+  const verifiedKeys = [];
   for (const field of cardType.fields) {
+    if (field.key === 'verified_fields') continue;
+
     if (field.type === 'multi-select') {
       const picker = body.querySelector(`.tag-picker[data-field-key="${field.key}"]`);
       if (picker) {
@@ -145,7 +173,11 @@ function saveCurrentEdit() {
       const el = body.querySelector(`[data-field-key="${field.key}"]`);
       newRow[field.key] = el ? el.value : '';
     }
+
+    const cb = body.querySelector(`.edit-verify-checkbox[data-verify-key="${field.key}"]`);
+    if (cb?.checked) verifiedKeys.push(field.key);
   }
+  newRow.verified_fields = verifiedKeys.join('|');
 
   const data = getData() || cardType.sampleData;
   if (data) data[currentEditIndex] = newRow;
