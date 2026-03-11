@@ -42,7 +42,12 @@
       "key": "difficulty",
       "label": "Difficulty",
       "type": "select",
-      "options": ["Beginner", "Intermediate", "Expert"]
+      "options": ["Beginner", "Intermediate", "Expert"],
+      "pillColors": {
+        "Beginner": "#27ae60",
+        "Intermediate": "#e67e22",
+        "Expert": "#c0392b"
+      }
     },
     {
       "key": "humidity",
@@ -54,7 +59,12 @@
       "key": "pet_safe",
       "label": "Pet Safe",
       "type": "select",
-      "options": ["Yes", "No", "Caution"]
+      "options": ["Yes", "No", "Caution"],
+      "pillColors": {
+        "Yes": "#27ae60",
+        "No": "#c0392b",
+        "Caution": "#e67e22"
+      }
     },
     {
       "key": "growth_rate",
@@ -72,7 +82,13 @@
       "label": "Active Seasons",
       "type": "multi-select",
       "separator": "|",
-      "options": ["Spring", "Summer", "Fall", "Winter"]
+      "options": ["Spring", "Summer", "Fall", "Winter"],
+      "pillColors": {
+        "Spring": "#27ae60",
+        "Summer": "#e67e22",
+        "Fall": "#c0392b",
+        "Winter": "#2980b9"
+      }
     },
     {
       "key": "care_tips",

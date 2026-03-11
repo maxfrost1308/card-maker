@@ -2,7 +2,7 @@
  * Table View module — sortable, filterable data table for card data.
  */
 import { openEditModal } from './edit-view.js';
-import { deleteRows, rerenderActiveView } from './ui.js';
+import { deleteRows, setRowData, rerenderActiveView } from './ui.js';
 import { showToast } from './ui.js';
 
 let container = null;
@@ -82,13 +82,12 @@ export function renderTable(cardType, rows) {
   deleteBtn.textContent = 'Delete selected';
   deleteBtn.addEventListener('click', () => {
     if (selectedIndices.size === 0) return;
+    const count = selectedIndices.size;
     deleteRows([...selectedIndices]);
     selectedIndices.clear();
     rerenderActiveView();
-    showToast(`Deleted ${deleteBtn._count} card(s).`, 'success');
+    showToast(`Deleted ${count} card(s).`, 'success');
   });
-  // Store count for toast message before delete clears it
-  Object.defineProperty(deleteBtn, '_count', { get: () => selectedIndices.size });
   bulkBar.appendChild(deleteBtn);
 
   controls.appendChild(bulkBar);
@@ -111,7 +110,6 @@ export function renderTable(cardType, rows) {
   selectAllCb = document.createElement('input');
   selectAllCb.type = 'checkbox';
   selectAllCb.addEventListener('change', () => {
-    // Toggle all visible rows
     const visibleCheckboxes = tbodyRef.querySelectorAll('.row-checkbox');
     visibleCheckboxes.forEach(cb => {
       cb.checked = selectAllCb.checked;
@@ -161,10 +159,8 @@ export function renderTable(cardType, rows) {
     const td = document.createElement('td');
 
     if ((field.type === 'select' || field.type === 'multi-select') && field.options) {
-      // Excel-style multi-select filter popover
       td.appendChild(buildSelectFilter(field));
     } else {
-      // Freeform text filter
       const input = document.createElement('input');
       input.type = 'text';
       input.placeholder = 'Filter...';
@@ -196,9 +192,8 @@ export function renderTable(cardType, rows) {
   rebuildTbody();
 }
 
-/**
- * Build an Excel-style filter popover for select/multi-select fields.
- */
+// ===== Excel-style filter popover =====
+
 function buildSelectFilter(field) {
   const wrapper = document.createElement('div');
   wrapper.className = 'col-filter-select-wrapper';
@@ -219,7 +214,6 @@ function buildSelectFilter(field) {
   popover.className = 'col-filter-popover';
   popover.hidden = true;
 
-  // All / None links
   const actions = document.createElement('div');
   actions.className = 'filter-popover-actions';
   const selectAllLink = document.createElement('a');
@@ -231,7 +225,6 @@ function buildSelectFilter(field) {
   actions.append(selectAllLink, ' | ', clearAllLink);
   popover.appendChild(actions);
 
-  // Option checkboxes
   const checkboxes = [];
   for (const opt of field.options) {
     const label = document.createElement('label');
@@ -239,7 +232,6 @@ function buildSelectFilter(field) {
     const cb = document.createElement('input');
     cb.type = 'checkbox';
     cb.value = opt;
-    // If no filter active, all options shown (all checked)
     cb.checked = !filterSet || filterSet.size === 0 || filterSet.has(opt);
     cb.addEventListener('change', () => applySelectFilter(field, checkboxes, btn));
     label.append(cb, ' ' + opt);
@@ -261,30 +253,23 @@ function buildSelectFilter(field) {
 
   btn.addEventListener('click', (e) => {
     e.stopPropagation();
-    // Close other open popovers
     document.querySelectorAll('.col-filter-popover').forEach(p => {
       if (p !== popover) p.hidden = true;
     });
     popover.hidden = !popover.hidden;
   });
 
-  // Close on outside click
-  const closeHandler = (e) => {
+  document.addEventListener('click', (e) => {
     if (!wrapper.contains(e.target)) popover.hidden = true;
-  };
-  document.addEventListener('click', closeHandler);
+  });
 
   wrapper.append(btn, popover);
   return wrapper;
 }
 
-/**
- * Apply select filter from checkbox states.
- */
 function applySelectFilter(field, checkboxes, btn) {
   const checked = checkboxes.filter(cb => cb.checked).map(cb => cb.value);
   if (checked.length === field.options.length || checked.length === 0) {
-    // All selected or none = no filter
     delete columnFilters[field.key];
     btn.classList.remove('filter-active');
     btn.textContent = 'Filter \u25BE';
@@ -296,25 +281,190 @@ function applySelectFilter(field, checkboxes, btn) {
   rebuildTbody();
 }
 
-/**
- * Rebuild tbody with current sort/filter state.
- */
+// ===== Pill rendering =====
+
+function isPillField(field) {
+  return (field.type === 'select' || field.type === 'multi-select') && field.options;
+}
+
+function createPill(value, field) {
+  const pill = document.createElement('span');
+  pill.className = 'cell-pill';
+  pill.textContent = value;
+
+  if (field.pillColors && field.pillColors[value]) {
+    pill.style.backgroundColor = field.pillColors[value];
+    pill.style.color = '#fff';
+  }
+
+  return pill;
+}
+
+function renderCellContent(td, value, field) {
+  td.innerHTML = '';
+  if (!value) return;
+
+  if (isPillField(field)) {
+    if (field.type === 'multi-select') {
+      const sep = field.separator || '|';
+      const values = String(value).split(sep).map(v => v.trim()).filter(Boolean);
+      const group = document.createElement('span');
+      group.className = 'cell-pill-group';
+      for (const v of values) group.appendChild(createPill(v, field));
+      td.appendChild(group);
+    } else {
+      td.appendChild(createPill(String(value), field));
+    }
+  } else {
+    td.textContent = String(value);
+  }
+}
+
+// ===== Inline cell editing =====
+
+let activeEditCell = null;
+
+function startCellEdit(td, rowIdx, field) {
+  if (activeEditCell === td) return;
+  if (activeEditCell) commitCellEdit();
+
+  activeEditCell = td;
+  td.classList.add('cell-editing');
+  td._editCtx = { rowIdx, field };
+
+  const rows = currentRows;
+  const currentValue = rows[rowIdx][field.key] || '';
+  td.innerHTML = '';
+
+  if (field.type === 'select' && field.options) {
+    const select = document.createElement('select');
+    select.className = 'cell-edit-input';
+
+    const emptyOpt = document.createElement('option');
+    emptyOpt.value = '';
+    emptyOpt.textContent = '--';
+    select.appendChild(emptyOpt);
+
+    for (const opt of field.options) {
+      const option = document.createElement('option');
+      option.value = opt;
+      option.textContent = opt;
+      if (opt === currentValue) option.selected = true;
+      select.appendChild(option);
+    }
+
+    select.addEventListener('change', () => commitCellEdit());
+    select.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') cancelCellEdit(td, rowIdx, field);
+    });
+    td.appendChild(select);
+    select.focus();
+
+  } else if (field.type === 'multi-select' && field.options) {
+    const sep = field.separator || '|';
+    const selected = currentValue ? String(currentValue).split(sep).map(v => v.trim()) : [];
+
+    const panel = document.createElement('div');
+    panel.className = 'cell-edit-multi';
+
+    for (const opt of field.options) {
+      const label = document.createElement('label');
+      label.className = 'cell-edit-cb-label';
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.value = opt;
+      cb.checked = selected.includes(opt);
+      label.append(cb, ' ' + opt);
+      panel.appendChild(label);
+    }
+
+    const doneBtn = document.createElement('button');
+    doneBtn.className = 'btn cell-edit-done';
+    doneBtn.textContent = 'Done';
+    doneBtn.type = 'button';
+    doneBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      commitCellEdit();
+    });
+    panel.appendChild(doneBtn);
+    td.appendChild(panel);
+
+  } else {
+    const input = document.createElement('input');
+    input.type = field.type === 'number' ? 'number' : 'text';
+    input.className = 'cell-edit-input';
+    input.value = currentValue;
+    if (field.maxLength) input.maxLength = field.maxLength;
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') commitCellEdit();
+      if (e.key === 'Escape') cancelCellEdit(td, rowIdx, field);
+      e.stopPropagation();
+    });
+    input.addEventListener('blur', () => {
+      setTimeout(() => {
+        if (activeEditCell === td) commitCellEdit();
+      }, 100);
+    });
+    td.appendChild(input);
+    input.focus();
+    input.select();
+  }
+}
+
+function commitCellEdit() {
+  if (!activeEditCell) return;
+  const td = activeEditCell;
+  const { rowIdx, field } = td._editCtx;
+
+  let newValue;
+  if (field.type === 'select') {
+    const select = td.querySelector('select');
+    newValue = select ? select.value : '';
+  } else if (field.type === 'multi-select') {
+    const sep = field.separator || '|';
+    const checked = Array.from(td.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
+    newValue = checked.join(sep);
+  } else {
+    const input = td.querySelector('input');
+    newValue = input ? input.value : '';
+  }
+
+  const row = { ...currentRows[rowIdx], [field.key]: newValue };
+  setRowData(rowIdx, row);
+  currentRows[rowIdx] = row;
+
+  td.classList.remove('cell-editing');
+  delete td._editCtx;
+  activeEditCell = null;
+  renderCellContent(td, newValue, field);
+}
+
+function cancelCellEdit(td, rowIdx, field) {
+  td.classList.remove('cell-editing');
+  delete td._editCtx;
+  activeEditCell = null;
+  renderCellContent(td, currentRows[rowIdx][field.key] || '', field);
+}
+
+// ===== Rebuild tbody =====
+
 function rebuildTbody() {
+  if (activeEditCell) commitCellEdit();
+
   const fields = fieldsRef;
   const rows = currentRows;
   const tbody = tbodyRef;
 
-  // Build array of original indices
   let indices = rows.map((_, i) => i);
 
-  // Apply column filters
+  // Column filters
   indices = indices.filter(i => {
     for (const field of fields) {
       const filterVal = columnFilters[field.key];
       if (!filterVal) continue;
 
       if (filterVal instanceof Set) {
-        // Excel-style set filter for select/multi-select
         if (filterVal.size === 0) continue;
         const cellVal = String(rows[i][field.key] || '');
         if (field.type === 'multi-select') {
@@ -325,7 +475,6 @@ function rebuildTbody() {
           if (!filterVal.has(cellVal)) return false;
         }
       } else {
-        // Text filter
         const cellVal = String(rows[i][field.key] || '').toLowerCase();
         if (!cellVal.includes(filterVal.toLowerCase())) return false;
       }
@@ -333,7 +482,7 @@ function rebuildTbody() {
     return true;
   });
 
-  // Apply global filter
+  // Global filter
   if (globalFilter) {
     const gf = globalFilter.toLowerCase();
     indices = indices.filter(i => {
@@ -366,12 +515,6 @@ function rebuildTbody() {
   for (const idx of indices) {
     const tr = document.createElement('tr');
 
-    // Row click opens edit (but not on checkbox clicks)
-    tr.addEventListener('click', (e) => {
-      if (e.target.closest('.select-col')) return;
-      openEditModal(idx);
-    });
-
     // Checkbox cell
     const cbTd = document.createElement('td');
     cbTd.className = 'select-col';
@@ -389,10 +532,14 @@ function rebuildTbody() {
     cbTd.appendChild(cb);
     tr.appendChild(cbTd);
 
-    // Data cells
+    // Data cells — click to inline edit
     for (const field of fields) {
       const td = document.createElement('td');
-      td.textContent = rows[idx][field.key] || '';
+      renderCellContent(td, rows[idx][field.key] || '', field);
+      td.addEventListener('click', (e) => {
+        e.stopPropagation();
+        startCellEdit(td, idx, field);
+      });
       tr.appendChild(td);
     }
 
@@ -404,9 +551,6 @@ function rebuildTbody() {
   updateSelectAllState(indices);
 }
 
-/**
- * Show/hide bulk action bar based on selection.
- */
 function updateBulkBar() {
   if (!bulkBar) return;
   const count = selectedIndices.size;
@@ -414,9 +558,6 @@ function updateBulkBar() {
   bulkCountEl.textContent = `${count} selected`;
 }
 
-/**
- * Sync select-all checkbox state with current selection.
- */
 function updateSelectAllState(visibleIndices) {
   if (!selectAllCb || !visibleIndices) return;
   const allChecked = visibleIndices.length > 0 && visibleIndices.every(i => selectedIndices.has(i));
@@ -425,13 +566,11 @@ function updateSelectAllState(visibleIndices) {
   selectAllCb.indeterminate = someChecked && !allChecked;
 }
 
-/**
- * Clear table view and reset state.
- */
 export function destroyTable() {
   if (container) container.innerHTML = '';
   sortState = { key: null, dir: 'asc' };
   columnFilters = {};
   globalFilter = '';
   selectedIndices.clear();
+  activeEditCell = null;
 }
