@@ -490,7 +490,14 @@ export function createTagPicker(field, selectedValues, onChange) {
         const btn = document.createElement('button');
         btn.className = 'tag-picker-option';
         btn.type = 'button';
-        btn.textContent = opt;
+        const pill = document.createElement('span');
+        pill.className = 'cell-pill';
+        pill.textContent = opt;
+        if (field.pillColors && field.pillColors[opt]) {
+          pill.style.backgroundColor = field.pillColors[opt];
+          pill.style.color = '#fff';
+        }
+        btn.appendChild(pill);
         btn.addEventListener('mousedown', (e) => {
           e.preventDefault();
           e.stopPropagation();
