@@ -139,14 +139,15 @@
 }
 
 .ttrpg-back-icon {
-  width: 1.6in;
-  height: 1.6in;
+  width: 1.0in;
+  height: 1.0in;
   opacity: 0.85;
 }
 
 .ttrpg-back-icon img {
   width: 100%;
   height: 100%;
+  mix-blend-mode: screen;
 }
 
 .ttrpg-back-title {
