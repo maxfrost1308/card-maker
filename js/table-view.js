@@ -21,6 +21,8 @@ let selectAllCb = null;
 let tbodyRef = null;
 let rowCountRef = null;
 let fieldsRef = null;
+let filterTokensRef = null;
+let filterDropdownRef = null;
 
 /**
  * Render the full table view into #table-view.
@@ -52,6 +54,10 @@ export function renderTable(cardType, rows) {
   });
   controls.appendChild(globalInput);
 
+  // Filter bar
+  const filterBar = buildFilterBar(fields);
+  controls.appendChild(filterBar);
+
   // Clear filters button
   const clearBtn = document.createElement('button');
   clearBtn.className = 'btn table-clear-filters-btn';
@@ -59,7 +65,9 @@ export function renderTable(cardType, rows) {
   clearBtn.addEventListener('click', () => {
     globalFilter = '';
     columnFilters = {};
-    renderTable(currentCardType, currentRows);
+    globalInput.value = '';
+    renderFilterTokens();
+    rebuildTbody();
   });
   controls.appendChild(clearBtn);
 
@@ -152,42 +160,6 @@ export function renderTable(cardType, rows) {
     headerRow.appendChild(th);
   }
   thead.appendChild(headerRow);
-
-  // Thead — filter row
-  const filterRow = document.createElement('tr');
-  filterRow.className = 'filter-row';
-
-  // Empty cell for edit column
-  filterRow.appendChild(document.createElement('td'));
-
-  // Empty cell for checkbox column
-  filterRow.appendChild(document.createElement('td'));
-
-  for (const field of fields) {
-    const td = document.createElement('td');
-
-    if ((field.type === 'select' || field.type === 'multi-select') && field.options) {
-      td.appendChild(buildSelectFilter(field));
-    } else {
-      const input = document.createElement('input');
-      input.type = 'text';
-      input.placeholder = 'Filter...';
-      input.className = 'col-filter';
-      input.value = columnFilters[field.key] || '';
-      input.addEventListener('input', () => {
-        clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(() => {
-          columnFilters[field.key] = input.value;
-          rebuildTbody();
-        }, 150);
-      });
-      td.appendChild(input);
-    }
-
-    filterRow.appendChild(td);
-  }
-  thead.appendChild(filterRow);
-
   table.appendChild(thead);
 
   // Tbody
@@ -200,93 +172,212 @@ export function renderTable(cardType, rows) {
   rebuildTbody();
 }
 
-// ===== Excel-style filter popover =====
+// ===== Cloudscape-style Filter Bar =====
 
-function buildSelectFilter(field) {
-  const wrapper = document.createElement('div');
-  wrapper.className = 'col-filter-select-wrapper';
+function buildFilterBar(fields) {
+  const bar = document.createElement('div');
+  bar.className = 'filter-bar';
 
-  const btn = document.createElement('button');
-  btn.className = 'col-filter-btn';
-  btn.type = 'button';
+  const tokens = document.createElement('div');
+  tokens.className = 'filter-bar-tokens';
+  filterTokensRef = tokens;
+  bar.appendChild(tokens);
 
-  const filterSet = columnFilters[field.key];
-  if (filterSet instanceof Set && filterSet.size > 0) {
-    btn.classList.add('filter-active');
-    btn.textContent = `Filter (${filterSet.size}) \u25BE`;
-  } else {
-    btn.textContent = 'Filter \u25BE';
-  }
+  const addBtn = document.createElement('button');
+  addBtn.className = 'filter-bar-add';
+  addBtn.type = 'button';
+  addBtn.textContent = '+ Add filter';
+  bar.appendChild(addBtn);
 
-  const popover = document.createElement('div');
-  popover.className = 'col-filter-popover';
-  popover.hidden = true;
+  const dropdown = document.createElement('div');
+  dropdown.className = 'filter-bar-dropdown';
+  dropdown.hidden = true;
+  filterDropdownRef = dropdown;
+  bar.appendChild(dropdown);
 
-  const actions = document.createElement('div');
-  actions.className = 'filter-popover-actions';
-  const selectAllLink = document.createElement('a');
-  selectAllLink.href = '#';
-  selectAllLink.textContent = 'All';
-  const clearAllLink = document.createElement('a');
-  clearAllLink.href = '#';
-  clearAllLink.textContent = 'None';
-  actions.append(selectAllLink, ' | ', clearAllLink);
-  popover.appendChild(actions);
-
-  const checkboxes = [];
-  for (const opt of field.options) {
-    const label = document.createElement('label');
-    label.className = 'filter-option-label';
-    const cb = document.createElement('input');
-    cb.type = 'checkbox';
-    cb.value = opt;
-    cb.checked = !filterSet || filterSet.size === 0 || filterSet.has(opt);
-    cb.addEventListener('change', () => applySelectFilter(field, checkboxes, btn));
-    label.append(cb, ' ' + opt);
-    popover.appendChild(label);
-    checkboxes.push(cb);
-  }
-
-  selectAllLink.addEventListener('click', (e) => {
-    e.preventDefault();
-    checkboxes.forEach(cb => { cb.checked = true; });
-    applySelectFilter(field, checkboxes, btn);
-  });
-
-  clearAllLink.addEventListener('click', (e) => {
-    e.preventDefault();
-    checkboxes.forEach(cb => { cb.checked = false; });
-    applySelectFilter(field, checkboxes, btn);
-  });
-
-  btn.addEventListener('click', (e) => {
+  addBtn.addEventListener('click', (e) => {
     e.stopPropagation();
-    document.querySelectorAll('.col-filter-popover').forEach(p => {
-      if (p !== popover) p.hidden = true;
-    });
-    popover.hidden = !popover.hidden;
+    if (!dropdown.hidden) {
+      dropdown.hidden = true;
+      return;
+    }
+    showPropertyStep(dropdown, fields);
+    dropdown.hidden = false;
   });
 
   document.addEventListener('click', (e) => {
-    if (!wrapper.contains(e.target)) popover.hidden = true;
+    if (!bar.contains(e.target)) dropdown.hidden = true;
   });
 
-  wrapper.append(btn, popover);
-  return wrapper;
+  renderFilterTokens();
+  return bar;
 }
 
-function applySelectFilter(field, checkboxes, btn) {
-  const checked = checkboxes.filter(cb => cb.checked).map(cb => cb.value);
-  if (checked.length === field.options.length || checked.length === 0) {
-    delete columnFilters[field.key];
-    btn.classList.remove('filter-active');
-    btn.textContent = 'Filter \u25BE';
-  } else {
-    columnFilters[field.key] = new Set(checked);
-    btn.classList.add('filter-active');
-    btn.textContent = `Filter (${checked.length}) \u25BE`;
+function showPropertyStep(dropdown, fields) {
+  dropdown.innerHTML = '';
+  const search = document.createElement('input');
+  search.className = 'filter-dropdown-search';
+  search.placeholder = 'Search properties...';
+  search.type = 'text';
+  dropdown.appendChild(search);
+
+  const list = document.createElement('div');
+  dropdown.appendChild(list);
+
+  function render(filter) {
+    list.innerHTML = '';
+    const q = (filter || '').toLowerCase();
+    for (const field of fields) {
+      const label = field.label || field.key;
+      if (q && !label.toLowerCase().includes(q)) continue;
+      const btn = document.createElement('button');
+      btn.className = 'filter-prop-btn';
+      btn.type = 'button';
+      btn.textContent = label;
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        showValueStep(dropdown, field, fields);
+      });
+      list.appendChild(btn);
+    }
   }
-  rebuildTbody();
+
+  search.addEventListener('input', () => render(search.value));
+  render('');
+  setTimeout(() => search.focus(), 0);
+}
+
+function showValueStep(dropdown, field, fields) {
+  dropdown.innerHTML = '';
+
+  const header = document.createElement('div');
+  header.className = 'filter-dropdown-header';
+  const backBtn = document.createElement('button');
+  backBtn.className = 'filter-back-btn';
+  backBtn.type = 'button';
+  backBtn.textContent = '\u2190 Back';
+  backBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    showPropertyStep(dropdown, fields);
+  });
+  const title = document.createElement('span');
+  title.textContent = field.label || field.key;
+  header.append(backBtn, title);
+  dropdown.appendChild(header);
+
+  if ((field.type === 'select' || field.type === 'multi-select') && field.options) {
+    const filterSet = columnFilters[field.key];
+    for (const opt of field.options) {
+      const label = document.createElement('label');
+      label.className = 'filter-value-label';
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.value = opt;
+      cb.checked = filterSet instanceof Set && filterSet.has(opt);
+      cb.addEventListener('change', () => {
+        if (!columnFilters[field.key] || !(columnFilters[field.key] instanceof Set)) {
+          columnFilters[field.key] = new Set();
+        }
+        if (cb.checked) {
+          columnFilters[field.key].add(opt);
+        } else {
+          columnFilters[field.key].delete(opt);
+          if (columnFilters[field.key].size === 0) delete columnFilters[field.key];
+        }
+        renderFilterTokens();
+        rebuildTbody();
+      });
+
+      const pill = document.createElement('span');
+      pill.className = 'cell-pill';
+      pill.textContent = opt;
+      if (field.pillColors && field.pillColors[opt]) {
+        pill.style.backgroundColor = field.pillColors[opt];
+        pill.style.color = '#fff';
+      }
+      label.append(cb, ' ', pill);
+      dropdown.appendChild(label);
+    }
+  } else {
+    const input = document.createElement('input');
+    input.className = 'filter-text-input';
+    input.type = 'text';
+    input.placeholder = 'Type to filter...';
+    input.value = columnFilters[field.key] || '';
+    dropdown.appendChild(input);
+
+    const applyBtn = document.createElement('button');
+    applyBtn.className = 'btn filter-apply-btn';
+    applyBtn.type = 'button';
+    applyBtn.textContent = 'Apply';
+    applyBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (input.value.trim()) {
+        columnFilters[field.key] = input.value.trim();
+      } else {
+        delete columnFilters[field.key];
+      }
+      renderFilterTokens();
+      rebuildTbody();
+      filterDropdownRef.hidden = true;
+    });
+    dropdown.appendChild(applyBtn);
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') applyBtn.click();
+      e.stopPropagation();
+    });
+    setTimeout(() => input.focus(), 0);
+  }
+}
+
+function renderFilterTokens() {
+  if (!filterTokensRef) return;
+  filterTokensRef.innerHTML = '';
+  for (const field of fieldsRef) {
+    const filterVal = columnFilters[field.key];
+    if (!filterVal) continue;
+    const label = field.label || field.key;
+    if (filterVal instanceof Set) {
+      for (const val of filterVal) {
+        filterTokensRef.appendChild(createFilterToken(field, label, val));
+      }
+    } else if (typeof filterVal === 'string' && filterVal) {
+      filterTokensRef.appendChild(createFilterToken(field, label, filterVal));
+    }
+  }
+}
+
+function createFilterToken(field, label, value) {
+  const token = document.createElement('span');
+  token.className = 'filter-token';
+
+  const labelSpan = document.createElement('span');
+  labelSpan.className = 'filter-token-label';
+  labelSpan.textContent = label + ':';
+
+  const valueSpan = document.createElement('span');
+  valueSpan.className = 'filter-token-value';
+  valueSpan.textContent = value;
+
+  const removeBtn = document.createElement('button');
+  removeBtn.className = 'filter-token-remove';
+  removeBtn.type = 'button';
+  removeBtn.textContent = '\u00D7';
+  removeBtn.addEventListener('click', () => {
+    const filterVal = columnFilters[field.key];
+    if (filterVal instanceof Set) {
+      filterVal.delete(value);
+      if (filterVal.size === 0) delete columnFilters[field.key];
+    } else {
+      delete columnFilters[field.key];
+    }
+    renderFilterTokens();
+    rebuildTbody();
+  });
+
+  token.append(labelSpan, valueSpan, removeBtn);
+  return token;
 }
 
 // ===== Pill rendering =====
@@ -326,6 +417,119 @@ function renderCellContent(td, value, field) {
   } else {
     td.textContent = String(value);
   }
+}
+
+// ===== Tag Picker (shared component) =====
+
+export function createTagPicker(field, selectedValues, onChange) {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'tag-picker';
+  wrapper._selectedValues = [...selectedValues];
+
+  const tagsContainer = document.createElement('div');
+  tagsContainer.className = 'tag-picker-tags';
+  wrapper.appendChild(tagsContainer);
+
+  const inputWrap = document.createElement('div');
+  inputWrap.className = 'tag-picker-input-wrap';
+  const input = document.createElement('input');
+  input.className = 'tag-picker-input';
+  input.placeholder = 'Add...';
+  input.type = 'text';
+  inputWrap.appendChild(input);
+
+  const dropdown = document.createElement('div');
+  dropdown.className = 'tag-picker-dropdown';
+  dropdown.hidden = true;
+  inputWrap.appendChild(dropdown);
+  wrapper.appendChild(inputWrap);
+
+  function renderTags() {
+    tagsContainer.innerHTML = '';
+    for (const val of wrapper._selectedValues) {
+      const pill = document.createElement('span');
+      pill.className = 'tag-pill';
+      if (field.pillColors && field.pillColors[val]) {
+        pill.style.backgroundColor = field.pillColors[val];
+        pill.style.color = '#fff';
+      }
+      const text = document.createElement('span');
+      text.className = 'tag-pill-text';
+      text.textContent = val;
+      const removeBtn = document.createElement('button');
+      removeBtn.className = 'tag-pill-remove';
+      removeBtn.type = 'button';
+      removeBtn.textContent = '\u00D7';
+      removeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        wrapper._selectedValues = wrapper._selectedValues.filter(v => v !== val);
+        renderTags();
+        renderDropdown();
+        onChange(wrapper._selectedValues);
+      });
+      pill.append(text, removeBtn);
+      tagsContainer.appendChild(pill);
+    }
+  }
+
+  function renderDropdown() {
+    dropdown.innerHTML = '';
+    const q = input.value.toLowerCase();
+    const available = field.options.filter(opt =>
+      !wrapper._selectedValues.includes(opt) &&
+      (!q || opt.toLowerCase().includes(q))
+    );
+
+    if (available.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'tag-picker-empty';
+      empty.textContent = q ? 'No matches' : 'All selected';
+      dropdown.appendChild(empty);
+    } else {
+      for (const opt of available) {
+        const btn = document.createElement('button');
+        btn.className = 'tag-picker-option';
+        btn.type = 'button';
+        btn.textContent = opt;
+        btn.addEventListener('mousedown', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          wrapper._selectedValues.push(opt);
+          input.value = '';
+          renderTags();
+          renderDropdown();
+          onChange(wrapper._selectedValues);
+          input.focus();
+        });
+        dropdown.appendChild(btn);
+      }
+    }
+  }
+
+  input.addEventListener('focus', () => {
+    renderDropdown();
+    dropdown.hidden = false;
+  });
+
+  input.addEventListener('input', () => {
+    renderDropdown();
+    dropdown.hidden = false;
+  });
+
+  input.addEventListener('blur', () => {
+    setTimeout(() => { dropdown.hidden = true; }, 150);
+  });
+
+  input.addEventListener('keydown', (e) => {
+    e.stopPropagation();
+    if (e.key === 'Escape') {
+      dropdown.hidden = true;
+      input.blur();
+    }
+  });
+
+  renderTags();
+  return wrapper;
 }
 
 // ===== Inline cell editing =====
@@ -375,34 +579,14 @@ function startCellEdit(td, rowIdx, field) {
 
   } else if (field.type === 'multi-select' && field.options) {
     const sep = field.separator || '|';
-    const selected = currentValue ? String(currentValue).split(sep).map(v => v.trim()) : [];
+    const selected = currentValue ? String(currentValue).split(sep).map(v => v.trim()).filter(Boolean) : [];
 
-    const panel = document.createElement('div');
-    panel.className = 'cell-edit-multi';
-
-    for (const opt of field.options) {
-      const label = document.createElement('label');
-      label.className = 'cell-edit-cb-label';
-      const cb = document.createElement('input');
-      cb.type = 'checkbox';
-      cb.value = opt;
-      cb.checked = selected.includes(opt);
-      label.append(cb, ' ' + opt);
-      panel.appendChild(label);
-    }
-
-    const doneBtn = document.createElement('button');
-    doneBtn.className = 'btn cell-edit-done';
-    doneBtn.textContent = 'Done';
-    doneBtn.type = 'button';
-    doneBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      commitCellEdit();
+    const picker = createTagPicker(field, selected, (newValues) => {
+      td._tagPickerValues = newValues;
     });
-    panel.appendChild(doneBtn);
-    td.appendChild(panel);
+    td._tagPickerValues = selected;
+    td.appendChild(picker);
 
-    // Click outside to save (Excel-like behavior)
     const outsideHandler = (e) => {
       if (!td.contains(e.target)) {
         document.removeEventListener('mousedown', outsideHandler, true);
@@ -447,8 +631,7 @@ function commitCellEdit() {
     newValue = select ? select.value : '';
   } else if (field.type === 'multi-select') {
     const sep = field.separator || '|';
-    const checked = Array.from(td.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
-    newValue = checked.join(sep);
+    newValue = (td._tagPickerValues || []).join(sep);
   } else {
     const input = td.querySelector('input');
     newValue = input ? input.value : '';
