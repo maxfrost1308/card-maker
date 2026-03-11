@@ -1,0 +1,117 @@
+{
+  "id": "plant-care",
+  "name": "Plant Care Cards",
+  "description": "Reference cards for houseplant care. Front shows key stats, back shows care details.",
+  "cardSize": {
+    "width": "63.5mm",
+    "height": "88.9mm"
+  },
+  "fields": [
+    {
+      "key": "name",
+      "label": "Plant Name",
+      "type": "text",
+      "required": true
+    },
+    {
+      "key": "botanical",
+      "label": "Botanical Name",
+      "type": "text"
+    },
+    {
+      "key": "category",
+      "label": "Category",
+      "type": "select",
+      "options": ["Succulent", "Tropical", "Herb", "Fern", "Flowering", "Vine", "Tree", "Cactus"]
+    },
+    {
+      "key": "light",
+      "label": "Light Needs",
+      "type": "select",
+      "options": ["Full Sun", "Bright Indirect", "Medium", "Low Light"],
+      "required": true
+    },
+    {
+      "key": "water",
+      "label": "Water Frequency",
+      "type": "select",
+      "options": ["Daily", "Every 2-3 Days", "Weekly", "Every 2 Weeks", "Monthly"],
+      "required": true
+    },
+    {
+      "key": "difficulty",
+      "label": "Difficulty",
+      "type": "select",
+      "options": ["Beginner", "Intermediate", "Expert"],
+      "pillColors": {
+        "Beginner": "#27ae60",
+        "Intermediate": "#e67e22",
+        "Expert": "#c0392b"
+      }
+    },
+    {
+      "key": "humidity",
+      "label": "Humidity",
+      "type": "select",
+      "options": ["Low", "Average", "High", "Very High"]
+    },
+    {
+      "key": "pet_safe",
+      "label": "Pet Safe",
+      "type": "select",
+      "options": ["Yes", "No", "Caution"],
+      "pillColors": {
+        "Yes": "#27ae60",
+        "No": "#c0392b",
+        "Caution": "#e67e22"
+      }
+    },
+    {
+      "key": "growth_rate",
+      "label": "Growth Rate",
+      "type": "select",
+      "options": ["Slow", "Moderate", "Fast"]
+    },
+    {
+      "key": "mature_size",
+      "label": "Mature Size",
+      "type": "text"
+    },
+    {
+      "key": "seasons",
+      "label": "Active Seasons",
+      "type": "multi-select",
+      "separator": "|",
+      "options": ["Spring", "Summer", "Fall", "Winter"],
+      "pillColors": {
+        "Spring": "#27ae60",
+        "Summer": "#e67e22",
+        "Fall": "#c0392b",
+        "Winter": "#2980b9"
+      }
+    },
+    {
+      "key": "care_tips",
+      "label": "Care Tips",
+      "type": "text",
+      "maxLength": 200
+    },
+    {
+      "key": "common_issues",
+      "label": "Common Issues",
+      "type": "multi-select",
+      "separator": "|",
+      "options": ["Overwatering", "Root Rot", "Mealybugs", "Spider Mites", "Leaf Drop", "Brown Tips", "Leggy Growth", "Fungus Gnats", "Scale", "Yellowing"]
+    },
+    {
+      "key": "soil_type",
+      "label": "Soil Type",
+      "type": "text"
+    },
+    {
+      "key": "link",
+      "label": "Info Link",
+      "type": "url"
+    }
+  ]
+}

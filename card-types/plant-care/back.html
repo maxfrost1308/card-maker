@@ -1,0 +1,37 @@
+<div class="pc-card pc-back" data-card-type="plant-care">
+  <div class="pc-back-header">
+    <h2 class="pc-back-name">{{name}}</h2>
+  </div>
+
+  {{#care_tips}}
+  <div class="pc-section">
+    <h3 class="pc-section-title">Care Tips</h3>
+    <p class="pc-care-tips">{{care_tips}}</p>
+  </div>
+  {{/care_tips}}
+
+  {{#soil_type}}
+  <div class="pc-section">
+    <h3 class="pc-section-title">Soil</h3>
+    <p class="pc-soil">{{soil_type}}</p>
+  </div>
+  {{/soil_type}}
+
+  <div class="pc-section">
+    <h3 class="pc-section-title">Watch For</h3>
+    <div class="pc-issues">
+      {{#common_issues}}<span class="pc-issue">{{.}}</span>{{/common_issues}}
+      {{^common_issues}}<span class="pc-no-issues">No common issues noted</span>{{/common_issues}}
+    </div>
+  </div>
+
+  {{#link}}
+  <div class="pc-link-section">
+    <a class="pc-link" href="{{link}}" target="_blank">More Info</a>
+  </div>
+  {{/link}}
+
+  <div class="pc-back-footer">
+    <span class="pc-category-small">{{category}}</span>
+  </div>
+</div>

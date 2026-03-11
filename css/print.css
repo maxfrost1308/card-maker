@@ -1,0 +1,60 @@
+/* ===== Print Styles ===== */
+
+/* Screen: hide print area */
+@media screen {
+  #print-area { display: none; }
+}
+
+@media print {
+  /* Hide everything except print area */
+  body > *:not(#print-area) { display: none !important; }
+  #print-area { display: block; }
+
+  @page {
+    size: letter;
+    margin: 0;
+  }
+
+  .print-page {
+    width: 8.5in;
+    height: 11in;
+    padding: 0.25in 0.5in;
+    display: grid;
+    grid-template-columns: repeat(3, 2.5in);
+    grid-template-rows: repeat(3, 3.5in);
+    position: relative;
+    page-break-after: always;
+    overflow: hidden;
+  }
+
+  .print-page:last-child {
+    page-break-after: auto;
+  }
+
+  .print-page .card-wrapper {
+    width: 2.5in;
+    height: 3.5in;
+    border-radius: 0;
+    box-shadow: none;
+    overflow: hidden;
+    border: none;
+  }
+
+  /* Cut marks */
+  .cut-mark {
+    position: absolute;
+    z-index: 10;
+  }
+
+  .cut-mark-v {
+    width: 0;
+    height: 0.25in;
+    border-left: 0.25pt solid #999;
+  }
+
+  .cut-mark-h {
+    height: 0;
+    width: 0.5in;
+    border-top: 0.25pt solid #999;
+  }
+}
