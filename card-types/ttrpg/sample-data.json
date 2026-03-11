@@ -11,7 +11,7 @@
     "product_type": "Story Game",
     "format": "Pamphlet",
     "back_color": "#6aab6a",
-    "icon": "https://game-icons.net/icons/ffffff/000000/1x1/delapouite/bear-head.svg",
+    "icon": "https://raw.githubusercontent.com/game-icons/icons/master/delapouite/bear-head.svg",
     "qr_code": "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://granthovverton.itch.io/honey-heist",
     "link": "https://granthovverton.itch.io/honey-heist"
   },
@@ -27,7 +27,7 @@
     "product_type": "Traditional RPG",
     "format": "Full Book",
     "back_color": "#7b2d26",
-    "icon": "https://game-icons.net/icons/ffffff/000000/1x1/lorc/swords-emblem.svg",
+    "icon": "https://raw.githubusercontent.com/game-icons/icons/master/lorc/swords-emblem.svg",
     "qr_code": "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://www.dndbeyond.com",
     "link": "https://www.dndbeyond.com"
   },
@@ -43,7 +43,7 @@
     "product_type": "Traditional RPG",
     "format": "Full Book",
     "back_color": "#2c3e50",
-    "icon": "https://game-icons.net/icons/ffffff/000000/1x1/lorc/tentacles-skull.svg",
+    "icon": "https://raw.githubusercontent.com/game-icons/icons/master/lorc/tentacles-skull.svg",
     "qr_code": "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://www.chaosium.com/call-of-cthulhu-rpg/",
     "link": "https://www.chaosium.com/call-of-cthulhu-rpg/"
   },
@@ -59,7 +59,7 @@
     "product_type": "Narrative RPG",
     "format": "Full Book",
     "back_color": "#34495e",
-    "icon": "https://game-icons.net/icons/ffffff/000000/1x1/lorc/daggers.svg",
+    "icon": "https://raw.githubusercontent.com/game-icons/icons/master/lorc/daggers.svg",
     "qr_code": "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://bladesinthedark.com",
     "link": "https://bladesinthedark.com"
   },
@@ -75,7 +75,7 @@
     "product_type": "OSR",
     "format": "Zine",
     "back_color": "#1a1a2e",
-    "icon": "https://game-icons.net/icons/ffffff/000000/1x1/lorc/alien-skull.svg",
+    "icon": "https://raw.githubusercontent.com/game-icons/icons/master/lorc/alien-skull.svg",
     "qr_code": "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://www.mothershiprpg.com",
     "link": "https://www.mothershiprpg.com"
   },
@@ -91,7 +91,7 @@
     "product_type": "Story Game",
     "format": "Full Book",
     "back_color": "#8e44ad",
-    "icon": "https://game-icons.net/icons/ffffff/000000/1x1/lorc/drama-masks.svg",
+    "icon": "https://raw.githubusercontent.com/game-icons/icons/master/lorc/drama-masks.svg",
     "qr_code": "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://bullypulpitgames.com/fiasco/",
     "link": "https://bullypulpitgames.com/fiasco/"
   }
