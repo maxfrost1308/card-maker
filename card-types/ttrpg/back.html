@@ -1,7 +1,7 @@
 <div class="ttrpg-back" data-card-type="ttrpg" style="background:{{back_color}};">
   <div class="ttrpg-back-title">{{name}}</div>
   {{#icon}}
-  <div class="ttrpg-back-icon"><img src="{{{icon}}}"></div>
+  <div class="ttrpg-back-icon">{{{icon:icon}}}</div>
   {{/icon}}
   <div class="ttrpg-back-banners">
     {{#players}}
@@ -35,7 +35,7 @@
     </span>
     {{/format}}
   </div>
-  {{#qr_code}}
-  <div class="ttrpg-back-qr"><img src="{{{qr_code}}}"></div>
-  {{/qr_code}}
+  {{#link}}
+  <div class="ttrpg-back-qr">{{{qr:link}}}</div>
+  {{/link}}
 </div>

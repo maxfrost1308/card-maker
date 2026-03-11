@@ -90,12 +90,7 @@
     {
       "key": "icon",
       "label": "Icon",
-      "type": "image"
-    },
-    {
-      "key": "qr_code",
-      "label": "QR Code",
-      "type": "image"
+      "type": "icon"
     },
     {
       "key": "link",

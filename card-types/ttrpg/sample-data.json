@@ -11,8 +11,7 @@
     "product_type": "Story Game",
     "format": "Pamphlet",
     "back_color": "#6aab6a",
-    "icon": "https://raw.githubusercontent.com/game-icons/icons/master/delapouite/bear-head.svg",
-    "qr_code": "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://granthovverton.itch.io/honey-heist",
+    "icon": "delapouite/bear-head",
     "link": "https://granthovverton.itch.io/honey-heist"
   },
   {
@@ -27,8 +26,7 @@
     "product_type": "Traditional RPG",
     "format": "Full Book",
     "back_color": "#7b2d26",
-    "icon": "https://raw.githubusercontent.com/game-icons/icons/master/lorc/swords-emblem.svg",
-    "qr_code": "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://www.dndbeyond.com",
+    "icon": "lorc/swords-emblem",
     "link": "https://www.dndbeyond.com"
   },
   {
@@ -43,8 +41,7 @@
     "product_type": "Traditional RPG",
     "format": "Full Book",
     "back_color": "#2c3e50",
-    "icon": "https://raw.githubusercontent.com/game-icons/icons/master/lorc/tentacles-skull.svg",
-    "qr_code": "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://www.chaosium.com/call-of-cthulhu-rpg/",
+    "icon": "lorc/tentacles-skull",
     "link": "https://www.chaosium.com/call-of-cthulhu-rpg/"
   },
   {
@@ -59,8 +56,7 @@
     "product_type": "Narrative RPG",
     "format": "Full Book",
     "back_color": "#34495e",
-    "icon": "https://raw.githubusercontent.com/game-icons/icons/master/lorc/daggers.svg",
-    "qr_code": "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://bladesinthedark.com",
+    "icon": "lorc/daggers",
     "link": "https://bladesinthedark.com"
   },
   {
@@ -75,8 +71,7 @@
     "product_type": "OSR",
     "format": "Zine",
     "back_color": "#1a1a2e",
-    "icon": "https://raw.githubusercontent.com/game-icons/icons/master/lorc/alien-skull.svg",
-    "qr_code": "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://www.mothershiprpg.com",
+    "icon": "lorc/alien-skull",
     "link": "https://www.mothershiprpg.com"
   },
   {
@@ -91,8 +86,7 @@
     "product_type": "Story Game",
     "format": "Full Book",
     "back_color": "#8e44ad",
-    "icon": "https://raw.githubusercontent.com/game-icons/icons/master/lorc/drama-masks.svg",
-    "qr_code": "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://bullypulpitgames.com/fiasco/",
+    "icon": "lorc/drama-masks",
     "link": "https://bullypulpitgames.com/fiasco/"
   }
 ]

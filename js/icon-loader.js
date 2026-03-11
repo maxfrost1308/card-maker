@@ -111,6 +111,9 @@ async function doFetch({ url, key, resolve, reject }) {
     // Strip XML declaration and doctype if present
     svg = svg.replace(/<\?xml[^>]*\?>/gi, '').replace(/<!DOCTYPE[^>]*>/gi, '').trim();
 
+    // Strip the game-icons.net black background rectangle
+    svg = svg.replace(/<path d="M0 0h512v512H0z"\s*\/?>/, '');
+
     // Make it inline-friendly: remove fixed width/height on root <svg> and ensure viewBox
     svg = svg.replace(/<svg([^>]*)>/, (match, attrs) => {
       // Remove width/height attributes for flexible sizing

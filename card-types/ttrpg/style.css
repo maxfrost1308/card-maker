@@ -144,10 +144,9 @@
   opacity: 0.85;
 }
 
-.ttrpg-back-icon img {
+.ttrpg-back-icon svg {
   width: 100%;
   height: 100%;
-  mix-blend-mode: screen;
 }
 
 .ttrpg-back-title {
