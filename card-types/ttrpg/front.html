@@ -1,0 +1,19 @@
+<div class="ttrpg-front" data-card-type="ttrpg">
+  <h1 class="ttrpg-title">{{name}}</h1>
+  <div class="ttrpg-genre-tags">{{#genres}}<span class="ttrpg-genre-pill genre-{{.}}">{{.}}</span> {{/genres}}</div>
+  <div class="ttrpg-body">
+    <div class="ttrpg-section ttrpg-hook-section">
+      <h2>The Hook</h2>
+      <p>{{hook}}</p>
+    </div>
+    {{#like}}
+    <div class="ttrpg-section ttrpg-like-section">
+      <h2>Play this if you like&hellip;</h2>
+      <p>{{like}}</p>
+    </div>
+    {{/like}}
+  </div>
+  {{#components}}
+  <div class="ttrpg-components-footer">{{components}}</div>
+  {{/components}}
+</div>

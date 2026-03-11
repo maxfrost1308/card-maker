@@ -1,0 +1,237 @@
+/* ===== TTRPG Card — Scoped Styles ===== */
+
+[data-card-type="ttrpg"] {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 0.55rem;
+  line-height: 1.4;
+  color: #2c2c2c;
+  overflow: hidden;
+}
+
+/* ===== FRONT ===== */
+.ttrpg-front {
+  width: 100%;
+  height: 100%;
+  border: 1px solid #d0ccc4;
+  font-size: 0.55rem;
+  line-height: 1.4;
+  background: #fdfcfa;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  border-left: 4px solid #d0ccc4;
+}
+
+.ttrpg-title {
+  font-size: 0.82rem;
+  font-weight: bold;
+  color: #1a1a1a;
+  text-align: center;
+  padding: 7px 8px 4px 8px;
+  letter-spacing: 0.3px;
+  border-bottom: 1.5px solid #333;
+  margin: 0 8px;
+}
+
+.ttrpg-genre-tags {
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 2px 4px;
+  min-height: 0.28in;
+  align-items: center;
+}
+
+.ttrpg-genre-pill {
+  display: inline-block;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 0.34rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #fff;
+  padding: 0.5px 8px;
+  border-radius: 20px;
+  line-height: 1.4;
+}
+
+/* Genre colors */
+.genre-fantasy { background: #6a4c93; }
+.genre-sci-fi { background: #2e86ab; }
+.genre-horror { background: #8b1a1a; }
+.genre-dark { background: #444; }
+.genre-modern { background: #5b7553; }
+.genre-romance { background: #c44569; }
+.genre-mystery { background: #3c3c6e; }
+.genre-weird { background: #b8560b; }
+.genre-gonzo { background: #e07b00; }
+.genre-cozy { background: #7bb369; }
+.genre-drama { background: #7a5195; }
+.genre-comedy { background: #d4a017; }
+.genre-supernatural { background: #6b4c8a; }
+.genre-any { background: #666; }
+
+.ttrpg-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 3px 9px 5px 9px;
+}
+
+.ttrpg-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.ttrpg-section h2 {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 0.44rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: #888;
+  margin-bottom: 2px;
+  border-bottom: 0.5px solid #e0ddd6;
+  padding-bottom: 1px;
+}
+
+.ttrpg-section p {
+  font-size: 0.62rem;
+  line-height: 1.5;
+  color: #3a3a3a;
+}
+
+.ttrpg-hook-section {
+  padding-bottom: 4px;
+  border-bottom: 0.5px dashed #d0ccc4;
+  margin-bottom: 4px;
+}
+
+.ttrpg-like-section p {
+  font-style: italic;
+  color: #555;
+}
+
+.ttrpg-components-footer {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 0.40rem;
+  font-weight: 500;
+  color: #888;
+  text-align: center;
+  padding: 3px 8px;
+  border-top: 0.5px solid #e0ddd6;
+  margin-top: auto;
+}
+
+/* ===== BACK ===== */
+.ttrpg-back {
+  width: 100%;
+  height: 100%;
+  border: 1px solid #d0ccc4;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ttrpg-back-icon {
+  width: 1.6in;
+  height: 1.6in;
+  opacity: 0.85;
+}
+
+.ttrpg-back-icon img {
+  width: 100%;
+  height: 100%;
+}
+
+.ttrpg-back-title {
+  position: absolute;
+  top: 10px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 0.70rem;
+  font-weight: bold;
+  color: #fff;
+  letter-spacing: 0.5px;
+}
+
+/* Banner specs — left side */
+.ttrpg-back-banners {
+  position: absolute;
+  bottom: 6px;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  z-index: 2;
+}
+
+.ttrpg-back-banner {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 3px 8px 3px 6px;
+  border-radius: 0 3px 3px 0;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 0.40rem;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+  width: 1.1in;
+}
+
+.ttrpg-back-banner-icon {
+  width: 10px;
+  height: 10px;
+  flex-shrink: 0;
+}
+
+/* QR code — bottom right */
+.ttrpg-back-qr {
+  position: absolute;
+  bottom: 6px;
+  right: 6px;
+  z-index: 2;
+  background: #fff;
+  padding: 2px;
+  border-radius: 3px;
+}
+
+.ttrpg-back-qr img {
+  width: 0.85in;
+  height: 0.85in;
+  display: block;
+}
+
+/* ===== AUTO-SIZE VARIANTS ===== */
+.ttrpg-front.ttrpg-md { font-size: 0.50rem; }
+.ttrpg-front.ttrpg-md .ttrpg-title { font-size: 0.70rem; }
+.ttrpg-front.ttrpg-md .ttrpg-section p { font-size: 0.52rem; }
+
+.ttrpg-front.ttrpg-sm { font-size: 0.45rem; }
+.ttrpg-front.ttrpg-sm .ttrpg-title { font-size: 0.64rem; }
+.ttrpg-front.ttrpg-sm .ttrpg-section p { font-size: 0.47rem; }
+
+.ttrpg-front.ttrpg-xs { font-size: 0.40rem; }
+.ttrpg-front.ttrpg-xs .ttrpg-title { font-size: 0.58rem; }
+.ttrpg-front.ttrpg-xs .ttrpg-section p { font-size: 0.42rem; }
+
+/* ===== Print adjustments ===== */
+@media print {
+  .ttrpg-front,
+  .ttrpg-back,
+  .ttrpg-genre-pill,
+  .ttrpg-back-banner,
+  .ttrpg-back-qr {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
