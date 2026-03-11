@@ -5,11 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Card Maker</title>
   <link rel="stylesheet" href="css/app.css">
+  <link rel="stylesheet" href="css/table-view.css">
+  <link rel="stylesheet" href="css/edit-view.css">
+  <link rel="stylesheet" href="css/print.css">
 </head>
 <body>
   <header class="app-header">
     <h1>Card Maker</h1>
     <div class="header-actions">
+      <div class="view-toggle">
+        <button class="btn view-btn active" data-view="cards">Cards</button>
+        <button class="btn view-btn" data-view="table">Table</button>
+      </div>
       <label class="toggle-label">
         <input type="checkbox" id="show-backs" checked>
         Show backs
@@ -49,18 +56,22 @@
         <div class="custom-upload-group">
           <label>
             Schema (JSON)
+            <a href="#" class="starter-link" data-starter="schema">download starter</a>
             <input type="file" id="custom-schema" accept=".json">
           </label>
           <label>
             Front Template (HTML)
+            <a href="#" class="starter-link" data-starter="front">download starter</a>
             <input type="file" id="custom-front" accept=".html,.htm">
           </label>
           <label>
             Back Template (HTML)
+            <a href="#" class="starter-link" data-starter="back">download starter</a>
             <input type="file" id="custom-back" accept=".html,.htm">
           </label>
           <label>
             Styles (CSS)
+            <a href="#" class="starter-link" data-starter="css">download starter</a>
             <input type="file" id="custom-css" accept=".css">
           </label>
           <button id="custom-upload-btn" class="btn">Register Card Type</button>
@@ -75,10 +86,30 @@
           <p>Or pick a built-in card type to see sample cards.</p>
         </div>
       </div>
+      <div id="table-view" class="table-view" hidden></div>
     </main>
   </div>
 
   <div id="toast" class="toast" hidden></div>
+
+  <div id="print-area" class="print-area"></div>
+
+  <!-- Edit Modal -->
+  <div id="edit-modal" class="edit-modal" hidden>
+    <div class="edit-modal-panel">
+      <div class="edit-modal-header">
+        <button class="btn edit-nav-btn" id="edit-prev" title="Previous card">&larr;</button>
+        <h2 id="edit-title">Edit Card</h2>
+        <button class="btn edit-nav-btn" id="edit-next" title="Next card">&rarr;</button>
+        <button class="btn edit-close-btn" id="edit-close">&times;</button>
+      </div>
+      <div class="edit-modal-body" id="edit-modal-body"></div>
+      <div class="edit-modal-footer">
+        <button class="btn" id="edit-cancel">Cancel</button>
+        <button class="btn btn-primary" id="edit-save">Save</button>
+      </div>
+    </div>
+  </div>
 
   <script src="lib/papaparse.min.js"></script>
   <script type="module" src="js/app.js"></script>

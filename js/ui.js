@@ -4,6 +4,10 @@
 import * as registry from './card-type-registry.js';
 import { renderCard } from './template-renderer.js';
 import { parseCsv, generateCsv } from './csv-parser.js';
+import { renderTable, destroyTable } from './table-view.js';
+import { initEditView, openEditModal } from './edit-view.js';
+import { buildPrintLayout, clearPrintLayout } from './print-layout.js';
+import { getStarterSchema, getStarterFront, getStarterBack, getStarterCss } from './starter-files.js';
 
 // DOM refs
 const cardTypeSelect = document.getElementById('card-type-select');
@@ -29,7 +33,13 @@ const customUploadBtn = document.getElementById('custom-upload-btn');
 
 let currentData = null;        // parsed CSV rows
 let fileHandle = null;         // File System Access API handle (Chromium only)
+let activeView = 'cards';      // 'cards' | 'table'
 const hasFSAPI = 'showOpenFilePicker' in window;
+
+// State accessors for external modules
+export function getData() { return currentData; }
+export function setRowData(index, row) { currentData[index] = row; }
+export function getActiveCardType() { return registry.get(cardTypeSelect.value); }
 
 /**
  * Populate the card type dropdown with all registered types.
@@ -83,9 +93,9 @@ function selectCardType(id) {
 
   // If there's sample data and no user data loaded, show samples
   if (!currentData && ct.sampleData) {
-    renderCards(ct, ct.sampleData);
+    rerenderActiveView(ct, ct.sampleData);
   } else if (currentData) {
-    renderCards(ct, currentData);
+    rerenderActiveView(ct, currentData);
   } else {
     renderEmpty();
   }
@@ -112,9 +122,24 @@ function renderFieldReference(fields) {
 }
 
 /**
+ * Re-render the currently active view (cards or table).
+ */
+export function rerenderActiveView(cardType, rows) {
+  if (!cardType) cardType = getActiveCardType();
+  if (!rows) rows = currentData || cardType?.sampleData;
+  if (!cardType || !rows) return;
+
+  if (activeView === 'table') {
+    renderTable(cardType, rows);
+  } else {
+    renderCards(cardType, rows);
+  }
+}
+
+/**
  * Render cards into the grid.
  */
-function renderCards(cardType, rows) {
+export function renderCards(cardType, rows) {
   const showBacks = showBacksToggle.checked && !!cardType.backTemplate;
   const width = cardType.cardSize?.width || '63.5mm';
   const height = cardType.cardSize?.height || '88.9mm';
@@ -148,6 +173,14 @@ function renderCards(cardType, rows) {
       pair.appendChild(backWrapper);
     }
 
+    // Edit button overlay
+    const editBtn = document.createElement('button');
+    editBtn.className = 'card-edit-btn';
+    editBtn.textContent = '\u270E';
+    editBtn.title = 'Edit this card';
+    editBtn.addEventListener('click', () => openEditModal(i));
+    pair.appendChild(editBtn);
+
     cardGrid.appendChild(pair);
   }
 
@@ -177,8 +210,8 @@ export function showToast(msg, type = 'info', duration = 4000) {
 /**
  * Trigger a file download.
  */
-function downloadFile(filename, content) {
-  const blob = new Blob([content], { type: 'text/csv' });
+function downloadFile(filename, content, mimeType = 'text/csv') {
+  const blob = new Blob([content], { type: mimeType });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -237,7 +270,7 @@ async function loadCsvFile(file, displayName) {
   }
 
   currentData = data;
-  renderCards(ct, data);
+  rerenderActiveView(ct, data);
   updateSaveState();
   showFilename(displayName || file.name);
   showToast(`Loaded ${data.length} card(s).`, 'success');
@@ -347,11 +380,53 @@ export function bindEvents() {
     const ct = registry.get(cardTypeSelect.value);
     if (!ct) return;
     const data = currentData || ct.sampleData;
-    if (data) renderCards(ct, data);
+    if (data) rerenderActiveView(ct, data);
+  });
+
+  // View toggle (cards / table)
+  const viewBtns = document.querySelectorAll('.view-btn');
+  const tableViewEl = document.getElementById('table-view');
+  viewBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const view = btn.dataset.view;
+      if (view === activeView) return;
+      activeView = view;
+      viewBtns.forEach(b => b.classList.toggle('active', b.dataset.view === view));
+      cardGrid.hidden = view !== 'cards';
+      tableViewEl.hidden = view !== 'table';
+      const ct = getActiveCardType();
+      const data = currentData || ct?.sampleData;
+      if (ct && data) rerenderActiveView(ct, data);
+    });
   });
 
   // Print
-  printBtn.addEventListener('click', () => window.print());
+  printBtn.addEventListener('click', () => {
+    const ct = getActiveCardType();
+    const data = currentData || ct?.sampleData;
+    if (!ct || !data) { showToast('No cards to print.', 'error'); return; }
+    buildPrintLayout(ct, data);
+    window.print();
+  });
+  window.addEventListener('afterprint', clearPrintLayout);
+
+  // Edit view init
+  initEditView();
+
+  // Starter file downloads
+  document.querySelector('.custom-upload-group').addEventListener('click', (e) => {
+    if (!e.target.matches('.starter-link')) return;
+    e.preventDefault();
+    const type = e.target.dataset.starter;
+    const starters = {
+      schema: { fn: getStarterSchema, name: 'card-type.json', mime: 'application/json' },
+      front:  { fn: getStarterFront,  name: 'front.html',     mime: 'text/html' },
+      back:   { fn: getStarterBack,   name: 'back.html',      mime: 'text/html' },
+      css:    { fn: getStarterCss,    name: 'style.css',       mime: 'text/css' },
+    };
+    const s = starters[type];
+    if (s) downloadFile(s.name, s.fn(), s.mime);
+  });
 
   // Hide raw file input when FSAPI is available (Open button is the primary UI)
   if (hasFSAPI) {
