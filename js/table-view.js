@@ -2,7 +2,7 @@
  * Table View module — sortable, filterable data table for card data.
  */
 import { openEditModal } from './edit-view.js';
-import { deleteRows, setRowData, rerenderActiveView } from './ui.js';
+import { deleteRows, setRowData, rerenderActiveView, getData } from './ui.js';
 import { showToast } from './ui.js';
 
 let container = null;
@@ -13,6 +13,7 @@ let columnFilters = {};  // string for text fields, Set for select/multi-select
 let globalFilter = '';
 let debounceTimer = null;
 let selectedIndices = new Set();
+let visibleColumns = null; // Set of field keys to show; null = use defaults
 
 // Module-level DOM refs set during renderTable
 let bulkBar = null;
@@ -23,6 +24,37 @@ let rowCountRef = null;
 let fieldsRef = null;
 let filterTokensRef = null;
 let filterDropdownRef = null;
+let aggregationBarRef = null;
+
+// Predefined palette for hash-based tag colors
+const TAG_COLORS = [
+  '#6a4c93', '#2e86ab', '#c44569', '#5b7553', '#e07b00',
+  '#8b1a1a', '#3c3c6e', '#b8560b', '#d4a017', '#34495e',
+  '#7a5195', '#8b7355', '#e91e63', '#6b4c8a', '#7bb369',
+];
+
+/**
+ * Get a consistent color for a tag value based on its name hash.
+ */
+function hashTagColor(value) {
+  let hash = 0;
+  for (let i = 0; i < value.length; i++) {
+    hash = ((hash << 5) - hash + value.charCodeAt(i)) | 0;
+  }
+  return TAG_COLORS[Math.abs(hash) % TAG_COLORS.length];
+}
+
+/**
+ * Get the list of fields that should be visible in the table.
+ */
+function getVisibleFields() {
+  const fields = fieldsRef;
+  if (visibleColumns) {
+    return fields.filter(f => visibleColumns.has(f.key));
+  }
+  // Default: show all except hidden fields
+  return fields.filter(f => !f.hidden);
+}
 
 /**
  * Render the full table view into #table-view.
@@ -35,6 +67,11 @@ export function renderTable(cardType, rows) {
 
   const fields = cardType.fields;
   fieldsRef = fields;
+
+  // Initialize visibleColumns from schema defaults if not set
+  if (!visibleColumns) {
+    visibleColumns = new Set(fields.filter(f => !f.hidden).map(f => f.key));
+  }
 
   // Controls bar
   const controls = document.createElement('div');
@@ -71,6 +108,32 @@ export function renderTable(cardType, rows) {
   });
   controls.appendChild(clearBtn);
 
+  // Column visibility gear button
+  const colBtnWrap = document.createElement('div');
+  colBtnWrap.className = 'col-prefs-wrap';
+  const colBtn = document.createElement('button');
+  colBtn.className = 'btn table-col-prefs-btn';
+  colBtn.type = 'button';
+  colBtn.title = 'Configure visible columns';
+  colBtn.innerHTML = '&#9881;';
+  colBtnWrap.appendChild(colBtn);
+
+  const colDropdown = document.createElement('div');
+  colDropdown.className = 'col-prefs-dropdown';
+  colDropdown.hidden = true;
+  colBtnWrap.appendChild(colDropdown);
+
+  colBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (!colDropdown.hidden) { colDropdown.hidden = true; return; }
+    renderColumnPrefs(colDropdown, fields);
+    colDropdown.hidden = false;
+  });
+  document.addEventListener('click', (e) => {
+    if (!colBtnWrap.contains(e.target)) colDropdown.hidden = true;
+  });
+  controls.appendChild(colBtnWrap);
+
   const rowCount = document.createElement('span');
   rowCount.className = 'table-row-count';
   rowCountRef = rowCount;
@@ -101,18 +164,51 @@ export function renderTable(cardType, rows) {
   controls.appendChild(bulkBar);
   container.appendChild(controls);
 
+  // Aggregation bar
+  if (cardType.aggregations && cardType.aggregations.length > 0) {
+    const aggBar = document.createElement('div');
+    aggBar.className = 'table-aggregation-bar';
+    aggregationBarRef = aggBar;
+    container.appendChild(aggBar);
+  } else {
+    aggregationBarRef = null;
+  }
+
   // Table
   const tableWrap = document.createElement('div');
   tableWrap.className = 'table-wrap';
 
   const table = document.createElement('table');
   table.className = 'data-table';
+  table._headerRow = null;
 
-  // Thead — header row
+  // Thead
   const thead = document.createElement('thead');
+  table._thead = thead;
+  table.appendChild(thead);
+
+  // Tbody
+  const tbody = document.createElement('tbody');
+  tbodyRef = tbody;
+  table.appendChild(tbody);
+  tableWrap.appendChild(table);
+  container.appendChild(tableWrap);
+
+  rebuildTable();
+}
+
+/**
+ * Rebuild the entire table header + body (called when columns change).
+ */
+function rebuildTable() {
+  const table = container.querySelector('.data-table');
+  const thead = table._thead;
+  thead.innerHTML = '';
+
+  const vFields = getVisibleFields();
   const headerRow = document.createElement('tr');
 
-  // Edit column header (empty)
+  // Edit column header
   const editTh = document.createElement('th');
   editTh.className = 'edit-col';
   headerRow.appendChild(editTh);
@@ -135,7 +231,7 @@ export function renderTable(cardType, rows) {
   selectAllTh.appendChild(selectAllCb);
   headerRow.appendChild(selectAllTh);
 
-  for (const field of fields) {
+  for (const field of vFields) {
     const th = document.createElement('th');
     th.textContent = field.label || field.key;
     th.dataset.key = field.key;
@@ -160,16 +256,39 @@ export function renderTable(cardType, rows) {
     headerRow.appendChild(th);
   }
   thead.appendChild(headerRow);
-  table.appendChild(thead);
-
-  // Tbody
-  const tbody = document.createElement('tbody');
-  tbodyRef = tbody;
-  table.appendChild(tbody);
-  tableWrap.appendChild(table);
-  container.appendChild(tableWrap);
-
   rebuildTbody();
+}
+
+/**
+ * Render column preferences dropdown.
+ */
+function renderColumnPrefs(dropdown, fields) {
+  dropdown.innerHTML = '';
+  const title = document.createElement('div');
+  title.className = 'col-prefs-title';
+  title.textContent = 'Visible columns';
+  dropdown.appendChild(title);
+
+  for (const field of fields) {
+    const label = document.createElement('label');
+    label.className = 'col-prefs-label';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = visibleColumns.has(field.key);
+    cb.addEventListener('change', () => {
+      if (cb.checked) {
+        visibleColumns.add(field.key);
+      } else {
+        visibleColumns.delete(field.key);
+      }
+      rebuildTable();
+    });
+    const span = document.createElement('span');
+    span.textContent = field.label || field.key;
+    if (field.hidden) span.style.opacity = '0.6';
+    label.append(cb, ' ', span);
+    dropdown.appendChild(label);
+  }
 }
 
 // ===== Cloudscape-style Filter Bar =====
@@ -228,6 +347,7 @@ function showPropertyStep(dropdown, fields) {
     list.innerHTML = '';
     const q = (filter || '').toLowerCase();
     for (const field of fields) {
+      if (field.hidden) continue;
       const label = field.label || field.key;
       if (q && !label.toLowerCase().includes(q)) continue;
       const btn = document.createElement('button');
@@ -265,9 +385,25 @@ function showValueStep(dropdown, field, fields) {
   header.append(backBtn, title);
   dropdown.appendChild(header);
 
+  // Collect filter options: from schema (select/multi-select) or from data (tags)
+  let filterOptions = null;
   if ((field.type === 'select' || field.type === 'multi-select') && field.options) {
+    filterOptions = field.options;
+  } else if (field.type === 'tags' && currentRows) {
+    const sep = field.separator || '|';
+    const optSet = new Set();
+    for (const row of currentRows) {
+      const val = row[field.key];
+      if (val && typeof val === 'string') {
+        val.split(sep).map(v => v.trim()).filter(Boolean).forEach(v => optSet.add(v));
+      }
+    }
+    if (optSet.size > 0) filterOptions = [...optSet].sort();
+  }
+
+  if (filterOptions) {
     const filterSet = columnFilters[field.key];
-    for (const opt of field.options) {
+    for (const opt of filterOptions) {
       const label = document.createElement('label');
       label.className = 'filter-value-label';
       const cb = document.createElement('input');
@@ -293,6 +429,10 @@ function showValueStep(dropdown, field, fields) {
       pill.textContent = opt;
       if (field.pillColors && field.pillColors[opt]) {
         pill.style.backgroundColor = field.pillColors[opt];
+        pill.style.color = '#fff';
+      } else if (field.type === 'tags') {
+        const tagColor = hashTagColor(opt);
+        pill.style.backgroundColor = tagColor;
         pill.style.color = '#fff';
       }
       label.append(cb, ' ', pill);
@@ -414,17 +554,49 @@ function renderCellContent(td, value, field) {
     } else {
       td.appendChild(createPill(String(value), field));
     }
+  } else if (field.type === 'tags') {
+    const sep = field.separator || '|';
+    const values = String(value).split(sep).map(v => v.trim()).filter(Boolean);
+    if (values.length > 0) {
+      const group = document.createElement('span');
+      group.className = 'cell-pill-group';
+      for (const v of values) {
+        const pill = document.createElement('span');
+        pill.className = 'cell-pill';
+        pill.textContent = v;
+        pill.style.backgroundColor = hashTagColor(v);
+        pill.style.color = '#fff';
+        group.appendChild(pill);
+      }
+      td.appendChild(group);
+    }
   } else {
     td.textContent = String(value);
   }
 }
 
-// ===== Tag Picker (shared component) =====
+// ===== Tag Picker (shared component for tags/dynamic multi-select) =====
 
-export function createTagPicker(field, selectedValues, onChange) {
+export function createTagPicker(field, selectedValues, onChange, allRows) {
   const wrapper = document.createElement('div');
   wrapper.className = 'tag-picker';
   wrapper._selectedValues = [...selectedValues];
+
+  // For "tags" type, compute options dynamically from all rows
+  let options = field.options || [];
+  if (field.type === 'tags' && allRows) {
+    const sep = field.separator || '|';
+    const optSet = new Set();
+    for (const row of allRows) {
+      const val = row[field.key];
+      if (val && typeof val === 'string') {
+        val.split(sep).map(v => v.trim()).filter(Boolean).forEach(v => optSet.add(v));
+      }
+    }
+    // Also include currently selected values
+    selectedValues.forEach(v => optSet.add(v));
+    options = [...optSet].sort();
+  }
 
   const tagsContainer = document.createElement('div');
   tagsContainer.className = 'tag-picker-tags';
@@ -434,7 +606,7 @@ export function createTagPicker(field, selectedValues, onChange) {
   inputWrap.className = 'tag-picker-input-wrap';
   const input = document.createElement('input');
   input.className = 'tag-picker-input';
-  input.placeholder = 'Add...';
+  input.placeholder = field.type === 'tags' ? 'Add or create...' : 'Add...';
   input.type = 'text';
   inputWrap.appendChild(input);
 
@@ -451,6 +623,9 @@ export function createTagPicker(field, selectedValues, onChange) {
       pill.className = 'tag-pill';
       if (field.pillColors && field.pillColors[val]) {
         pill.style.backgroundColor = field.pillColors[val];
+        pill.style.color = '#fff';
+      } else if (field.type === 'tags') {
+        pill.style.backgroundColor = hashTagColor(val);
         pill.style.color = '#fff';
       }
       const text = document.createElement('span');
@@ -472,15 +647,40 @@ export function createTagPicker(field, selectedValues, onChange) {
     }
   }
 
+  function addValue(val) {
+    if (val && !wrapper._selectedValues.includes(val)) {
+      wrapper._selectedValues.push(val);
+      input.value = '';
+      renderTags();
+      renderDropdown();
+      onChange(wrapper._selectedValues);
+      input.focus();
+    }
+  }
+
   function renderDropdown() {
     dropdown.innerHTML = '';
-    const q = input.value.toLowerCase();
-    const available = field.options.filter(opt =>
+    const q = input.value.toLowerCase().trim();
+    const available = options.filter(opt =>
       !wrapper._selectedValues.includes(opt) &&
       (!q || opt.toLowerCase().includes(q))
     );
 
-    if (available.length === 0) {
+    // For tags type: show "Create <value>" option if typed value is new
+    if (field.type === 'tags' && q && !options.some(o => o.toLowerCase() === q) && !wrapper._selectedValues.some(v => v.toLowerCase() === q)) {
+      const createBtn = document.createElement('button');
+      createBtn.className = 'tag-picker-option tag-picker-create';
+      createBtn.type = 'button';
+      createBtn.textContent = `Create "${input.value.trim()}"`;
+      createBtn.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        addValue(input.value.trim());
+      });
+      dropdown.appendChild(createBtn);
+    }
+
+    if (available.length === 0 && !dropdown.firstChild) {
       const empty = document.createElement('div');
       empty.className = 'tag-picker-empty';
       empty.textContent = q ? 'No matches' : 'All selected';
@@ -501,12 +701,7 @@ export function createTagPicker(field, selectedValues, onChange) {
         btn.addEventListener('mousedown', (e) => {
           e.preventDefault();
           e.stopPropagation();
-          wrapper._selectedValues.push(opt);
-          input.value = '';
-          renderTags();
-          renderDropdown();
-          onChange(wrapper._selectedValues);
-          input.focus();
+          addValue(opt);
         });
         dropdown.appendChild(btn);
       }
@@ -529,6 +724,11 @@ export function createTagPicker(field, selectedValues, onChange) {
 
   input.addEventListener('keydown', (e) => {
     e.stopPropagation();
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const val = input.value.trim();
+      if (val) addValue(val);
+    }
     if (e.key === 'Escape') {
       dropdown.hidden = true;
       input.blur();
@@ -536,6 +736,51 @@ export function createTagPicker(field, selectedValues, onChange) {
   });
 
   renderTags();
+  return wrapper;
+}
+
+// ===== Pill Picker (click-to-toggle multi-select) =====
+
+export function createPillPicker(field, selectedValues, onChange) {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'pill-picker';
+  wrapper._selectedValues = [...selectedValues];
+
+  function render() {
+    wrapper.innerHTML = '';
+    for (const opt of field.options) {
+      const pill = document.createElement('button');
+      pill.type = 'button';
+      pill.className = 'pill-picker-pill';
+      pill.textContent = opt;
+
+      const isSelected = wrapper._selectedValues.includes(opt);
+      if (isSelected) {
+        pill.classList.add('selected');
+        if (field.pillColors && field.pillColors[opt]) {
+          pill.style.backgroundColor = field.pillColors[opt];
+          pill.style.color = '#fff';
+          pill.style.borderColor = field.pillColors[opt];
+        }
+      }
+
+      pill.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (wrapper._selectedValues.includes(opt)) {
+          wrapper._selectedValues = wrapper._selectedValues.filter(v => v !== opt);
+        } else {
+          wrapper._selectedValues.push(opt);
+        }
+        render();
+        onChange(wrapper._selectedValues);
+      });
+
+      wrapper.appendChild(pill);
+    }
+  }
+
+  render();
   return wrapper;
 }
 
@@ -556,41 +801,58 @@ function startCellEdit(td, rowIdx, field) {
   td.innerHTML = '';
 
   if (field.type === 'select' && field.options) {
-    const select = document.createElement('select');
-    select.className = 'cell-edit-input';
+    // Use pill picker for single-select too
+    const picker = createPillPicker(
+      { ...field, type: 'multi-select' },
+      currentValue ? [currentValue] : [],
+      (newValues) => {
+        // Single-select: only keep the last selected
+        td._tagPickerValues = newValues.length > 0 ? [newValues[newValues.length - 1]] : [];
+        // Auto-commit on selection
+        commitCellEdit();
+      }
+    );
+    td._tagPickerValues = currentValue ? [currentValue] : [];
+    td.appendChild(picker);
 
-    const emptyOpt = document.createElement('option');
-    emptyOpt.value = '';
-    emptyOpt.textContent = '--';
-    select.appendChild(emptyOpt);
-
-    for (const opt of field.options) {
-      const option = document.createElement('option');
-      option.value = opt;
-      option.textContent = opt;
-      if (opt === currentValue) option.selected = true;
-      select.appendChild(option);
-    }
-
-    select.addEventListener('change', () => commitCellEdit());
-    select.addEventListener('blur', () => {
-      setTimeout(() => {
+    const outsideHandler = (e) => {
+      if (!td.contains(e.target)) {
+        document.removeEventListener('mousedown', outsideHandler, true);
         if (activeEditCell === td) commitCellEdit();
-      }, 100);
-    });
-    select.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') cancelCellEdit(td, rowIdx, field);
-    });
-    td.appendChild(select);
-    select.focus();
+      }
+    };
+    setTimeout(() => {
+      document.addEventListener('mousedown', outsideHandler, true);
+    }, 0);
 
   } else if (field.type === 'multi-select' && field.options) {
     const sep = field.separator || '|';
     const selected = currentValue ? String(currentValue).split(sep).map(v => v.trim()).filter(Boolean) : [];
 
-    const picker = createTagPicker(field, selected, (newValues) => {
+    const picker = createPillPicker(field, selected, (newValues) => {
       td._tagPickerValues = newValues;
     });
+    td._tagPickerValues = selected;
+    td.appendChild(picker);
+
+    const outsideHandler = (e) => {
+      if (!td.contains(e.target)) {
+        document.removeEventListener('mousedown', outsideHandler, true);
+        if (activeEditCell === td) commitCellEdit();
+      }
+    };
+    setTimeout(() => {
+      document.addEventListener('mousedown', outsideHandler, true);
+    }, 0);
+
+  } else if (field.type === 'tags') {
+    const sep = field.separator || '|';
+    const selected = currentValue ? String(currentValue).split(sep).map(v => v.trim()).filter(Boolean) : [];
+    const allRows = getData() || currentRows;
+
+    const picker = createTagPicker(field, selected, (newValues) => {
+      td._tagPickerValues = newValues;
+    }, allRows);
     td._tagPickerValues = selected;
     td.appendChild(picker);
 
@@ -634,9 +896,9 @@ function commitCellEdit() {
 
   let newValue;
   if (field.type === 'select') {
-    const select = td.querySelector('select');
-    newValue = select ? select.value : '';
-  } else if (field.type === 'multi-select') {
+    // Pill picker stores array; for single-select take first item
+    newValue = (td._tagPickerValues || [])[0] || '';
+  } else if (field.type === 'multi-select' || field.type === 'tags') {
     const sep = field.separator || '|';
     newValue = (td._tagPickerValues || []).join(sep);
   } else {
@@ -667,6 +929,7 @@ function rebuildTbody() {
   if (activeEditCell) commitCellEdit();
 
   const fields = fieldsRef;
+  const vFields = getVisibleFields();
   const rows = currentRows;
   const tbody = tbodyRef;
 
@@ -681,7 +944,7 @@ function rebuildTbody() {
       if (filterVal instanceof Set) {
         if (filterVal.size === 0) continue;
         const cellVal = String(rows[i][field.key] || '');
-        if (field.type === 'multi-select') {
+        if (field.type === 'multi-select' || field.type === 'tags') {
           const sep = field.separator || '|';
           const cellOptions = cellVal.split(sep).map(v => v.trim());
           if (!cellOptions.some(v => filterVal.has(v))) return false;
@@ -761,8 +1024,8 @@ function rebuildTbody() {
     cbTd.appendChild(cb);
     tr.appendChild(cbTd);
 
-    // Data cells — click to inline edit
-    for (const field of fields) {
+    // Data cells — only visible fields, click to inline edit
+    for (const field of vFields) {
       const td = document.createElement('td');
       renderCellContent(td, rows[idx][field.key] || '', field);
       td.addEventListener('click', (e) => {
@@ -778,6 +1041,7 @@ function rebuildTbody() {
   rowCountRef.textContent = `Showing ${indices.length} of ${rows.length} rows`;
   updateBulkBar();
   updateSelectAllState(indices);
+  updateAggregationBar(indices);
 }
 
 function updateBulkBar() {
@@ -795,6 +1059,27 @@ function updateSelectAllState(visibleIndices) {
   selectAllCb.indeterminate = someChecked && !allChecked;
 }
 
+/**
+ * Render aggregation bar with counts from schema config.
+ */
+function updateAggregationBar(visibleIndices) {
+  if (!aggregationBarRef || !currentCardType.aggregations) return;
+  aggregationBarRef.innerHTML = '';
+  const rows = currentRows;
+
+  for (const agg of currentCardType.aggregations) {
+    const count = visibleIndices.filter(i => {
+      const val = rows[i][agg.field];
+      return val === agg.value;
+    }).length;
+
+    const item = document.createElement('span');
+    item.className = 'agg-item';
+    item.innerHTML = `<span class="agg-label">${agg.label}:</span> <span class="agg-value">${count}</span>`;
+    aggregationBarRef.appendChild(item);
+  }
+}
+
 export function destroyTable() {
   if (container) container.innerHTML = '';
   sortState = { key: null, dir: 'asc' };
@@ -802,4 +1087,5 @@ export function destroyTable() {
   globalFilter = '';
   selectedIndices.clear();
   activeEditCell = null;
+  visibleColumns = null;
 }

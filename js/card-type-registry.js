@@ -50,6 +50,8 @@ export async function registerBuiltIn(id) {
     description: schema.description || '',
     cardSize: schema.cardSize || { width: '63.5mm', height: '88.9mm' },
     fields: schema.fields || [],
+    colorMapping: schema.colorMapping || null,
+    aggregations: schema.aggregations || null,
     frontTemplate,
     backTemplate,
     css,
@@ -78,7 +80,7 @@ export async function registerFromUpload(schemaFile, frontFile, backFile, cssFil
   for (const f of schema.fields) {
     if (!f.key) throw new Error(`Field missing "key": ${JSON.stringify(f)}`);
     if (!f.type) throw new Error(`Field "${f.key}" missing "type".`);
-    const validTypes = ['text', 'select', 'multi-select', 'url', 'image', 'number'];
+    const validTypes = ['text', 'select', 'multi-select', 'tags', 'url', 'image', 'number', 'icon', 'qr'];
     if (!validTypes.includes(f.type)) {
       throw new Error(`Field "${f.key}" has invalid type "${f.type}". Valid: ${validTypes.join(', ')}`);
     }
@@ -92,6 +94,8 @@ export async function registerFromUpload(schemaFile, frontFile, backFile, cssFil
     description: schema.description || '',
     cardSize: schema.cardSize || { width: '63.5mm', height: '88.9mm' },
     fields: schema.fields,
+    colorMapping: schema.colorMapping || null,
+    aggregations: schema.aggregations || null,
     frontTemplate,
     backTemplate,
     css,

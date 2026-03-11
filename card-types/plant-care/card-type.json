@@ -112,6 +112,11 @@
       "key": "link",
       "label": "Info Link",
       "type": "url"
+    },
+    {
+      "key": "icon",
+      "label": "Icon (game-icons.net)",
+      "type": "icon"
     }
   ]
 }
