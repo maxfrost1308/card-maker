@@ -4,7 +4,7 @@
 import * as registry from './card-type-registry.js';
 import { renderCard } from './template-renderer.js';
 import { parseCsv, generateCsv, remapHeaders } from './csv-parser.js';
-import { renderTable, destroyTable } from './table-view.js';
+import { renderTable, destroyTable, getFilteredIndices } from './table-view.js';
 import { initEditView, openEditModal } from './edit-view.js';
 import { buildPrintLayout, clearPrintLayout } from './print-layout.js';
 import { getStarterSchema, getStarterFront, getStarterBack, getStarterCss } from './starter-files.js';
@@ -152,7 +152,9 @@ export async function rerenderActiveView(cardType, rows) {
   if (activeView === 'table') {
     renderTable(cardType, rows);
   } else {
-    await renderCards(cardType, rows);
+    // Propagate table filters/sort to cards view
+    const filtered = getFilteredIndices();
+    await renderCards(cardType, rows, filtered);
   }
 }
 
@@ -176,9 +178,14 @@ function collectIconValues(fields, rows) {
  * Render cards into the grid.
  * Preloads icons (if any icon fields exist) before rendering.
  */
-export async function renderCards(cardType, rows) {
-  // Preload icons for icon-type fields
-  const iconValues = collectIconValues(cardType.fields, rows);
+export async function renderCards(cardType, rows, filteredIndices) {
+  // When filteredIndices is provided, only show those rows (in that order).
+  // Each entry is an index into `rows`; we preserve it for the edit button.
+  const indices = filteredIndices || rows.map((_, i) => i);
+
+  // Preload icons for visible rows only
+  const visibleRows = indices.map(i => rows[i]);
+  const iconValues = collectIconValues(cardType.fields, visibleRows);
   if (iconValues.length > 0) {
     await preloadIcons(iconValues);
   }
@@ -190,8 +197,8 @@ export async function renderCards(cardType, rows) {
   cardGrid.innerHTML = '';
   cardGrid.classList.remove('empty-state');
 
-  for (let i = 0; i < rows.length; i++) {
-    const row = rows[i];
+  for (const idx of indices) {
+    const row = rows[idx];
 
     const pair = document.createElement('div');
     pair.className = 'card-pair';
@@ -216,18 +223,18 @@ export async function renderCards(cardType, rows) {
       pair.appendChild(backWrapper);
     }
 
-    // Edit button overlay
+    // Edit button overlay — uses original row index
     const editBtn = document.createElement('button');
     editBtn.className = 'card-edit-btn';
     editBtn.textContent = '\u270E';
     editBtn.title = 'Edit this card';
-    editBtn.addEventListener('click', () => openEditModal(i));
+    editBtn.addEventListener('click', () => openEditModal(idx));
     pair.appendChild(editBtn);
 
     cardGrid.appendChild(pair);
   }
 
-  if (rows.length === 0) {
+  if (indices.length === 0) {
     renderEmpty();
   }
 
@@ -457,7 +464,10 @@ export function bindEvents() {
     const ct = getActiveCardType();
     const data = currentData || ct?.sampleData;
     if (!ct || !data) { showToast('No cards to print.', 'error'); return; }
-    buildPrintLayout(ct, data);
+    // Propagate table filters/sort to print view
+    const filtered = getFilteredIndices();
+    const printRows = filtered ? filtered.map(i => data[i]) : data;
+    buildPrintLayout(ct, printRows);
     window.print();
   });
   window.addEventListener('afterprint', clearPrintLayout);

@@ -1080,6 +1080,76 @@ function updateAggregationBar(visibleIndices) {
   }
 }
 
+/**
+ * Return the filtered & sorted row indices (same logic as rebuildTbody).
+ * Returns null when no filters/sort are active (i.e. all rows, natural order).
+ */
+export function getFilteredIndices() {
+  if (!currentRows || !fieldsRef) return null;
+
+  const hasFilters = globalFilter ||
+    Object.values(columnFilters).some(v => v instanceof Set ? v.size > 0 : !!v);
+  const hasSorting = !!sortState.key;
+  if (!hasFilters && !hasSorting) return null;
+
+  const fields = fieldsRef;
+  const rows = currentRows;
+  let indices = rows.map((_, i) => i);
+
+  // Column filters
+  indices = indices.filter(i => {
+    for (const field of fields) {
+      const filterVal = columnFilters[field.key];
+      if (!filterVal) continue;
+      if (filterVal instanceof Set) {
+        if (filterVal.size === 0) continue;
+        const cellVal = String(rows[i][field.key] || '');
+        if (field.type === 'multi-select' || field.type === 'tags') {
+          const sep = field.separator || '|';
+          const cellOptions = cellVal.split(sep).map(v => v.trim());
+          if (!cellOptions.some(v => filterVal.has(v))) return false;
+        } else {
+          if (!filterVal.has(cellVal)) return false;
+        }
+      } else {
+        const cellVal = String(rows[i][field.key] || '').toLowerCase();
+        if (!cellVal.includes(filterVal.toLowerCase())) return false;
+      }
+    }
+    return true;
+  });
+
+  // Sort
+  if (sortState.key) {
+    const key = sortState.key;
+    const field = fields.find(f => f.key === key);
+    const isNumber = field && field.type === 'number';
+    indices.sort((a, b) => {
+      const va = rows[a][key] || '';
+      const vb = rows[b][key] || '';
+      let cmp;
+      if (isNumber) {
+        cmp = (parseFloat(va) || 0) - (parseFloat(vb) || 0);
+      } else {
+        cmp = String(va).localeCompare(String(vb));
+      }
+      return sortState.dir === 'desc' ? -cmp : cmp;
+    });
+  }
+
+  // Global filter
+  if (globalFilter) {
+    const gf = globalFilter.toLowerCase();
+    indices = indices.filter(i => {
+      return fields.some(field => {
+        return String(rows[i][field.key] || '').toLowerCase().includes(gf);
+      });
+    });
+  }
+
+  return indices;
+}
+
 export function destroyTable() {
   if (container) container.innerHTML = '';
   sortState = { key: null, dir: 'asc' };
