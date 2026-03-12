@@ -110,6 +110,14 @@
     </aside>
 
     <main class="main-area" id="main-content">
+      <div id="deck-bar" class="deck-bar" hidden>
+        <span id="deck-summary" class="deck-summary"></span>
+        <div id="shared-filter-bar" class="shared-filter-bar">
+          <input id="shared-search" type="search" class="shared-search-input" placeholder="Search cards…" aria-label="Search cards">
+          <span id="shared-filter-tokens" class="shared-filter-tokens"></span>
+          <button id="shared-clear-filters" class="btn btn-sm" hidden>Clear filters</button>
+        </div>
+      </div>
       <div id="card-grid" class="card-grid">
         <div class="empty-state">
           <p>Select a card type and upload a CSV to get started.</p>

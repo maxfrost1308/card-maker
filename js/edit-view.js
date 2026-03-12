@@ -121,12 +121,9 @@ export function openEditModal(rowIndex, triggerEl) {
     const value = row[field.key] || '';
 
     if (field.type === 'select' && field.options) {
-      // Use pill picker for single-select (click to choose)
-      const picker = createPillPicker(
-        { ...field, type: 'multi-select' },
-        value ? [value] : [],
-        () => {}
-      );
+      // Use pill picker for single-select; enforce single-select mode
+      const picker = createPillPicker(field, value ? [value] : [], () => {});
+      picker._singleSelect = true;
       picker.dataset.fieldKey = field.key;
       picker.dataset.selectType = 'single';
       wrapper.appendChild(picker);

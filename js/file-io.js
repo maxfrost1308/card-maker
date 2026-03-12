@@ -7,6 +7,7 @@
 
 import { parseCsv, generateCsv, remapHeaders } from './csv-parser.js';
 import { setData, getData, getActiveCardType, rerenderActiveView } from './state.js';
+import { updateDeckBar } from './deck-filter.js';
 import { showToast } from './toast.js';
 
 /** @type {FileSystemFileHandle|null} */
@@ -91,6 +92,7 @@ export async function loadCsvFile(file, displayName) {
   }
 
   setData(data);
+  updateDeckBar();
   rerenderActiveView(ct, data);
   updateSaveState();
   showFilename(displayName || file.name);

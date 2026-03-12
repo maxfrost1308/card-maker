@@ -16,6 +16,7 @@ import { getStarterSchema, getStarterFront, getStarterBack, getStarterCss } from
 import { preloadIcons } from './icon-loader.js';
 import { setData, getData, registerRerenderFn, registerGetActiveCardTypeFn } from './state.js';
 import { createVirtualGrid, VS_THRESHOLD } from './virtual-scroll.js';
+import { getQuery, initDeckBar, updateDeckBar } from './deck-filter.js';
 import { showToast } from './toast.js';
 import {
   hasFSAPI, openCsvWithPicker, loadCsvFile, saveToFile,
@@ -71,6 +72,8 @@ export async function rerenderActiveView(cardType, rows) {
   if (!cardType) cardType = getActiveCardType();
   if (!rows) rows = getData() || cardType?.sampleData;
   if (!cardType || !rows) return;
+
+  updateDeckBar();
 
   if (activeView === 'table') {
     renderTable(cardType, rows);
@@ -137,9 +140,8 @@ export async function renderCards(cardType, rows, filteredIndices) {
     return;
   }
 
-  // Apply card-view search filter (REQ-065)
-  const searchInput = document.getElementById('card-search-input');
-  const q = searchInput ? searchInput.value.trim().toLowerCase() : '';
+  // Apply shared search filter (REQ-065)
+  const q = getQuery().toLowerCase();
   const displayIndices = q
     ? indices.filter(i => cardType.fields.some(f => String(rows[i][f.key] || '').toLowerCase().includes(q)))
     : indices;
@@ -312,7 +314,6 @@ export function bindEvents() {
       viewBtns.forEach(b => b.classList.toggle('active', b.dataset.view === view));
       cardGrid.hidden = view !== 'cards';
       tableViewEl.hidden = view !== 'table';
-      updateCardSearchVisibility();
       const ct = getActiveCardType();
       const data = getData() || ct?.sampleData;
       if (ct && data) rerenderActiveView(ct, data);
@@ -361,22 +362,11 @@ export function bindEvents() {
     if (s) downloadFile(s.name, s.fn(), s.mime);
   });
 
-  // Card search bar (REQ-065)
-  const mainArea = document.getElementById('main-content');
-  const cardSearchBar = document.createElement('div');
-  cardSearchBar.className = 'card-search-bar';
-  cardSearchBar.hidden = true;
-  cardSearchBar.innerHTML = `<input id="card-search-input" type="search" class="card-search-input" placeholder="Search cards…" aria-label="Search cards">`;
-  mainArea.insertBefore(cardSearchBar, cardGrid);
-
-  let searchDebounce = null;
-  cardSearchBar.querySelector('#card-search-input').addEventListener('input', () => {
-    clearTimeout(searchDebounce);
-    searchDebounce = setTimeout(() => {
-      const ct = getActiveCardType();
-      const data = getData() || ct?.sampleData;
-      if (ct && data) renderCards(ct, data, getFilteredIndices() || undefined);
-    }, 150);
+  // Shared deck filter bar (REQ-065, shared between card + table views)
+  initDeckBar(() => {
+    const ct = getActiveCardType();
+    const data = getData() || ct?.sampleData;
+    if (ct && data) rerenderActiveView(ct, data);
   });
 
   // Drag-and-drop CSV (REQ-050)

@@ -257,10 +257,15 @@ export function createPillPicker(field, selectedValues, onChange) {
       pill.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        if (wrapper._selectedValues.includes(opt)) {
-          wrapper._selectedValues = wrapper._selectedValues.filter(v => v !== opt);
+        if (wrapper._singleSelect) {
+          // Single-select: clicking the already-selected option deselects it
+          wrapper._selectedValues = wrapper._selectedValues.includes(opt) ? [] : [opt];
         } else {
-          wrapper._selectedValues.push(opt);
+          if (wrapper._selectedValues.includes(opt)) {
+            wrapper._selectedValues = wrapper._selectedValues.filter(v => v !== opt);
+          } else {
+            wrapper._selectedValues.push(opt);
+          }
         }
         render();
         onChange(wrapper._selectedValues);
