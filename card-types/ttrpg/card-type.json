@@ -66,7 +66,7 @@
       "label": "Genre",
       "type": "multi-select",
       "separator": "|",
-      "options": ["Fantasy", "Sci-Fi", "Dark", "Modern", "Real-World", "Romance", "Mystery", "Weird", "Gonzo", "Cozy", "Drama", "Supernatural", "Music", "Any"],
+      "options": ["Fantasy", "Sci-Fi", "Dark", "Modern", "Real-World", "Romance", "Mystery", "Weird", "Gonzo", "Cozy", "Drama", "Supernatural", "Music", "Comedy", "Any"],
       "pillColors": {
         "Fantasy": "#6a4c93",
         "Sci-Fi": "#2e86ab",
@@ -81,6 +81,7 @@
         "Drama": "#7a5195",
         "Supernatural": "#6b4c8a",
         "Music": "#e91e63",
+        "Comedy": "#f4a024",
         "Any": "#666666"
       },
       "verifiable": true
@@ -140,14 +141,14 @@
       "label": "The Hook",
       "type": "text",
       "required": true,
-      "maxLength": 250,
+      "maxLength": 256,
       "verifiable": true
     },
     {
       "key": "if_you_like",
       "label": "Play This If You Like...",
       "type": "text",
-      "maxLength": 200,
+      "maxLength": 256,
       "verifiable": true
     },
     {
