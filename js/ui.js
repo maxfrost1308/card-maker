@@ -400,10 +400,16 @@ export function bindEvents() {
   const darkBtn = document.getElementById('dark-mode-toggle');
   if (darkBtn) {
     const stored = localStorage.getItem('card-maker-theme');
-    if (stored === 'dark') document.documentElement.classList.add('dark');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    // Apply: explicit pref wins; fall back to OS preference
+    if (stored === 'dark' || (!stored && prefersDark)) {
+      document.documentElement.classList.add('dark');
+      darkBtn.textContent = '☀️';
+    }
     darkBtn.addEventListener('click', () => {
       const isDark = document.documentElement.classList.toggle('dark');
       localStorage.setItem('card-maker-theme', isDark ? 'dark' : 'light');
+      darkBtn.textContent = isDark ? '☀️' : '🌙';
     });
   }
 

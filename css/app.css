@@ -34,17 +34,7 @@ html.dark kbd {
   color: var(--text);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root:not(.dark):not([data-theme="light"]) {
-    --bg: #1a1a2e;
-    --surface: #16213e;
-    --border: #2a2a4a;
-    --text: #e8e8f0;
-    --text-muted: #9090b0;
-    --accent: #6a9fd8;
-    --accent-hover: #5a8fc8;
-  }
-}
+/* Prefer-scheme detection handled in JS (bindEvents) to avoid conflicting with manual toggle */
 
 /* ===== Reset & Base ===== */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }

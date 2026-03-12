@@ -69,11 +69,11 @@ export async function loadCsvFile(file, displayName) {
   const ct = getActiveCardType();
   if (!ct) { showToast('Please select a card type first.', 'error'); return; }
 
-  const { data, errors } = await parseCsv(file);
+  const { data: rawData, errors } = await parseCsv(file);
   if (errors.length > 0) showToast(`CSV warnings: ${errors[0]}`, 'error');
-  if (data.length === 0) { showToast('CSV is empty or could not be parsed.', 'error'); return; }
+  if (rawData.length === 0) { showToast('CSV is empty or could not be parsed.', 'error'); return; }
 
-  data = remapHeaders(data, ct.fields);
+  let data = remapHeaders(rawData, ct.fields);
 
   // Warn when no CSV columns match schema fields (REQ-056)
   const schemaKeys = new Set(ct.fields.map(f => f.key));
