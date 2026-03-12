@@ -850,6 +850,7 @@ function rebuildTbody() {
 
       tr.appendChild(td);
     });
+    tbody.appendChild(tr);
     rowDisplayIdx++;
   }
 
