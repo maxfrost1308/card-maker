@@ -3,6 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- PWA (REQ-046) -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#4a6fa5">
+  <meta name="apple-mobile-web-app-capable" content="yes">
   <!-- Content Security Policy (REQ-082) -->
   <meta http-equiv="Content-Security-Policy" content="
     default-src 'self';
@@ -35,7 +39,19 @@
         Show backs
       </label>
       <button id="save-btn" class="btn btn-save" disabled title="Save CSV back to file (Ctrl+S)">Save</button>
+      <div class="header-menu-wrap">
+        <button class="btn" id="export-menu-btn" title="Export options" aria-haspopup="true" aria-expanded="false">Export ▾</button>
+        <div class="header-menu" id="export-menu" hidden role="menu">
+          <button class="header-menu-item" id="export-deck-btn" role="menuitem">⬇ Export deck (.cardmaker)</button>
+          <label class="header-menu-item" role="menuitem">
+            ⬆ Import deck…
+            <input type="file" id="import-deck-input" accept=".cardmaker,.json" style="display:none">
+          </label>
+          <button class="header-menu-item" id="export-png-btn" role="menuitem">🖼 Export cards as PNG…</button>
+        </div>
+      </div>
       <button id="print-btn" class="btn btn-primary">Print / PDF</button>
+      <button id="dark-mode-toggle" class="btn" title="Toggle dark mode" aria-label="Toggle dark mode">🌙</button>
     </div>
   </header>
 
@@ -120,6 +136,7 @@
       </div>
       <div class="edit-modal-body" id="edit-modal-body"></div>
       <div class="edit-modal-footer">
+        <button class="btn" id="edit-duplicate" title="Duplicate this card">Duplicate</button>
         <button class="btn" id="edit-cancel">Cancel</button>
         <button class="btn btn-primary" id="edit-save">Save</button>
       </div>

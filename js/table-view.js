@@ -8,6 +8,7 @@
 import { openEditModal } from './edit-view.js';
 import { deleteRows, setRowData, rerenderActiveView, getData } from './state.js';
 import { showToast } from './toast.js';
+import { pushUndo } from './undo-stack.js';
 import {
   hashTagColor,
   isPillField,
@@ -678,9 +679,16 @@ function commitCellEdit() {
     newValue = input ? input.value : '';
   }
 
+  const oldRow = { ...currentRows[rowIdx] };
   const row = { ...currentRows[rowIdx], [field.key]: newValue };
   currentRows[rowIdx] = row;
   setRowData(rowIdx, row);
+
+  // Push undo command (REQ-055)
+  pushUndo({
+    undo: () => { setRowData(rowIdx, oldRow); rerenderActiveView(); },
+    redo: () => { setRowData(rowIdx, row); rerenderActiveView(); },
+  });
 
   td.classList.remove('cell-editing');
   delete td._editCtx;

@@ -5,6 +5,7 @@ import { getData, setRowData, getActiveCardType, rerenderActiveView } from './st
 import { showToast } from './toast.js';
 import { createPillPicker, createTagPicker } from './table-view.js';
 import { createFocusTrap } from './focus-trap.js';
+import { pushUndo } from './undo-stack.js';
 
 let currentEditIndex = null;
 let initialized = false;
@@ -30,6 +31,10 @@ export function initEditView() {
   closeBtn.addEventListener('click', closeEditModal);
   prevBtn.addEventListener('click', () => navigateEdit(-1));
   nextBtn.addEventListener('click', () => navigateEdit(1));
+
+  // REQ-061: Duplicate current card
+  const duplicateBtn = document.getElementById('edit-duplicate');
+  duplicateBtn?.addEventListener('click', duplicateCurrentCard);
 
   // Click backdrop to close
   modal.addEventListener('click', (e) => {
@@ -214,11 +219,47 @@ function saveCurrentEdit() {
   newRow.verified_fields = verifiedKeys.join('|');
 
   const data = getData() || cardType.sampleData;
+  const oldRow = data ? { ...data[currentEditIndex] } : null;
+
   if (data) data[currentEditIndex] = newRow;
   setRowData(currentEditIndex, newRow);
+
+  // Push undo command (REQ-055)
+  if (oldRow !== null) {
+    const idx = currentEditIndex;
+    pushUndo({
+      undo: () => { setRowData(idx, oldRow); rerenderActiveView(); },
+      redo: () => { setRowData(idx, newRow); rerenderActiveView(); },
+    });
+  }
+
   rerenderActiveView();
   closeEditModal();
   showToast('Card updated.', 'success');
+}
+
+/**
+ * Duplicate the current card and open the edit modal for the copy (REQ-061).
+ */
+function duplicateCurrentCard() {
+  const cardType = getActiveCardType();
+  const data = getData();
+  if (!cardType || currentEditIndex === null || !data) return;
+
+  const copy = { ...data[currentEditIndex] };
+  data.push(copy);
+  setRowData(data.length - 1, copy);
+
+  pushUndo({
+    undo: () => { data.splice(data.length - 1, 1); rerenderActiveView(); },
+    redo: () => { data.push({ ...copy }); rerenderActiveView(); },
+  });
+
+  closeEditModal();
+  rerenderActiveView();
+  // Open the new duplicate for immediate editing
+  setTimeout(() => openEditModal(data.length - 1), 50);
+  showToast('Card duplicated.', 'success');
 }
 
 /**

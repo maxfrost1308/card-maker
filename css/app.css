@@ -1,3 +1,51 @@
+/* ===== Dark Mode (REQ-054) ===== */
+:root {
+  color-scheme: light dark;
+}
+
+html.dark {
+  --bg: #1a1a2e;
+  --surface: #16213e;
+  --border: #2a2a4a;
+  --text: #e8e8f0;
+  --text-muted: #9090b0;
+  --accent: #6a9fd8;
+  --accent-hover: #5a8fc8;
+  --radius: 6px;
+  --card-gap: 12px;
+}
+
+/* Keep card rendering area white — cards are designed for print */
+html.dark .card-wrapper {
+  filter: none;
+}
+
+html.dark .card-add-btn {
+  color: var(--text-muted);
+  border-color: var(--border);
+}
+
+html.dark .empty-state-icon svg rect[fill="#e8eef7"] { fill: #2a2a4a; }
+html.dark .empty-state-icon svg rect[fill="#f5f8ff"] { fill: #1e2d4e; }
+
+html.dark kbd {
+  background: #2a2a4a;
+  border-color: #444;
+  color: var(--text);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.dark):not([data-theme="light"]) {
+    --bg: #1a1a2e;
+    --surface: #16213e;
+    --border: #2a2a4a;
+    --text: #e8e8f0;
+    --text-muted: #9090b0;
+    --accent: #6a9fd8;
+    --accent-hover: #5a8fc8;
+  }
+}
+
 /* ===== Reset & Base ===== */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 [hidden] { display: none !important; }
@@ -392,6 +440,42 @@ html { font-family: system-ui, -apple-system, sans-serif; color: var(--text); ba
 }
 
 .main-area { position: relative; }
+
+/* ===== Header Export Menu (REQ-064) ===== */
+.header-menu-wrap {
+  position: relative;
+}
+
+.header-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  min-width: 220px;
+  z-index: 200;
+  overflow: hidden;
+}
+
+.header-menu-item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 10px 16px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.85rem;
+  text-align: left;
+  color: var(--text);
+  gap: 8px;
+}
+
+.header-menu-item:hover {
+  background: var(--bg);
+}
 
 /* ===== Keyboard Shortcuts Modal (REQ-053) ===== */
 .shortcuts-modal {

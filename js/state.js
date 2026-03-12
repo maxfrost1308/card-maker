@@ -26,10 +26,24 @@ let _getActiveCardTypeFn = null;
 export function getData() { return _data; }
 
 /**
- * Replace the entire data array.
+ * Replace the entire data array and schedule a session auto-save.
  * @param {Object[]|null} data
  */
-export function setData(data) { _data = data; }
+export function setData(data) {
+  _data = data;
+  _scheduleSave();
+}
+
+let _saveTimer = null;
+function _scheduleSave() {
+  clearTimeout(_saveTimer);
+  _saveTimer = setTimeout(async () => {
+    try {
+      const { saveSession } = await import('./storage.js');
+      await saveSession();
+    } catch { /* storage may not be available in tests */ }
+  }, 1000); // debounce: save 1s after last mutation
+}
 
 /**
  * Update a single row in the data array.
