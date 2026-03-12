@@ -3,7 +3,7 @@
  * Card type data (card-types/) is served network-first to stay fresh.
  */
 
-const CACHE = 'card-maker-v1';
+const CACHE = 'card-maker-v2';
 
 const APP_SHELL = [
   '/',

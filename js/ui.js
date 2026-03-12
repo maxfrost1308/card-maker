@@ -400,7 +400,7 @@ export function bindEvents() {
   const darkBtn = document.getElementById('dark-mode-toggle');
   if (darkBtn) {
     const stored = localStorage.getItem('card-maker-theme');
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)')?.matches ?? false;
     // Apply: explicit pref wins; fall back to OS preference
     if (stored === 'dark' || (!stored && prefersDark)) {
       document.documentElement.classList.add('dark');
