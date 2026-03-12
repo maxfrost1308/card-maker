@@ -428,6 +428,58 @@ html { font-family: system-ui, -apple-system, sans-serif; color: var(--text); ba
 
 .main-area { position: relative; }
 
+/* ===== Print Progress (REQ-072) ===== */
+.print-progress {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--surface);
+  border: 1px solid var(--border, #ddd);
+  border-radius: var(--radius);
+  padding: 12px 20px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  min-width: 280px;
+  z-index: 500;
+}
+
+.print-progress-label {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.print-progress-bar {
+  height: 6px;
+  background: var(--bg);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.print-progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 3px;
+  transition: width 0.2s ease;
+}
+
+/* ===== Virtual Scroll (REQ-071) ===== */
+.card-grid {
+  position: relative;
+}
+
+.vs-spacer {
+  position: relative;
+}
+
+.vs-window {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+}
+
 /* ===== Header Export Menu (REQ-064) ===== */
 .header-menu-wrap {
   position: relative;

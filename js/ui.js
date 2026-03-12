@@ -15,6 +15,7 @@ import { buildPrintLayout, clearPrintLayout } from './print-layout.js';
 import { getStarterSchema, getStarterFront, getStarterBack, getStarterCss } from './starter-files.js';
 import { preloadIcons } from './icon-loader.js';
 import { setData, getData, registerRerenderFn, registerGetActiveCardTypeFn } from './state.js';
+import { createVirtualGrid, VS_THRESHOLD } from './virtual-scroll.js';
 import { showToast } from './toast.js';
 import {
   hasFSAPI, openCsvWithPicker, loadCsvFile, saveToFile,
@@ -43,6 +44,7 @@ const customCss = document.getElementById('custom-css');
 const customUploadBtn = document.getElementById('custom-upload-btn');
 
 let activeView = 'cards'; // 'cards' | 'table'
+let _virtualGrid = null; // active VirtualGrid instance (if any)
 
 // ── Public re-exports (backward compat) ──────────────────────────────────────
 export { getData, setRowData, deleteRows } from './state.js';
@@ -89,9 +91,13 @@ function collectIconValues(fields, rows) {
 
 /**
  * Render the card grid. REQ-051: loading indicator. REQ-060: add-card button.
+ * REQ-071: uses virtual scrolling for decks larger than VS_THRESHOLD cards.
  */
 export async function renderCards(cardType, rows, filteredIndices) {
   const indices = filteredIndices || rows.map((_, i) => i);
+
+  // Tear down any previous virtual grid
+  if (_virtualGrid) { _virtualGrid.destroy(); _virtualGrid = null; }
 
   cardGrid.innerHTML = '';
   cardGrid.classList.remove('empty-state');
@@ -114,6 +120,22 @@ export async function renderCards(cardType, rows, filteredIndices) {
   const showBacks = showBacksToggle.checked && !!cardType.backTemplate;
   const width = cardType.cardSize?.width || '63.5mm';
   const height = cardType.cardSize?.height || '88.9mm';
+
+  // REQ-071: virtual scrolling for large decks
+  if (indices.length >= VS_THRESHOLD) {
+    _virtualGrid = createVirtualGrid(cardGrid, {
+      cardType,
+      rows,
+      filteredIndices: indices,
+      showBacks,
+      onEditCard: (idx, btn) => openEditModal(idx, btn),
+      renderCardHtml: renderCard,
+    });
+    // Still append add-card button (outside virtual window)
+    const liveData = getData();
+    if (liveData) _appendAddCardBtn(cardType, liveData, width, height);
+    return;
+  }
 
   // Apply card-view search filter (REQ-065)
   const searchInput = document.getElementById('card-search-input');
@@ -157,31 +179,36 @@ export async function renderCards(cardType, rows, filteredIndices) {
     cardGrid.appendChild(pair);
   }
 
-  // REQ-060: add-card button (only when real data is loaded, not sample)
+  // REQ-060: add-card button
   const liveData = getData();
-  if (liveData) {
-    const addPair = document.createElement('div');
-    addPair.className = 'card-pair card-pair-add';
-    addPair.setAttribute('role', 'listitem');
-
-    const addBtn = document.createElement('button');
-    addBtn.className = 'card-add-btn';
-    addBtn.style.width = width;
-    addBtn.style.height = height;
-    addBtn.setAttribute('aria-label', 'Add new card');
-    addBtn.innerHTML = '<span class="card-add-icon">+</span><span class="card-add-label">Add card</span>';
-    addBtn.addEventListener('click', () => {
-      const emptyRow = {};
-      for (const f of cardType.fields) emptyRow[f.key] = '';
-      liveData.push(emptyRow);
-      setData(liveData);
-      openEditModal(liveData.length - 1, addBtn);
-    });
-    addPair.appendChild(addBtn);
-    cardGrid.appendChild(addPair);
-  }
+  if (liveData) _appendAddCardBtn(cardType, liveData, width, height);
 
   if (displayIndices.length === 0 && !getData()) renderEmpty();
+}
+
+/**
+ * Append the "Add card" button at the end of the card grid.
+ */
+function _appendAddCardBtn(cardType, liveData, width, height) {
+  const addPair = document.createElement('div');
+  addPair.className = 'card-pair card-pair-add';
+  addPair.setAttribute('role', 'listitem');
+
+  const addBtn = document.createElement('button');
+  addBtn.className = 'card-add-btn';
+  addBtn.style.width = width;
+  addBtn.style.height = height;
+  addBtn.setAttribute('aria-label', 'Add new card');
+  addBtn.innerHTML = '<span class="card-add-icon">+</span><span class="card-add-label">Add card</span>';
+  addBtn.addEventListener('click', () => {
+    const emptyRow = {};
+    for (const f of cardType.fields) emptyRow[f.key] = '';
+    liveData.push(emptyRow);
+    setData(liveData);
+    openEditModal(liveData.length - 1, addBtn);
+  });
+  addPair.appendChild(addBtn);
+  cardGrid.appendChild(addPair);
 }
 
 /**
@@ -297,9 +324,23 @@ export function bindEvents() {
     const ct = getActiveCardType();
     const data = getData() || ct?.sampleData;
     if (!ct || !data) { showToast('No cards to print.', 'error'); return; }
-    const filtered = getFilteredIndices();
-    buildPrintLayout(ct, filtered ? filtered.map(i => data[i]) : data);
-    window.print();
+    const rows = (getFilteredIndices() || data.map((_, i) => i)).map(i => data[i]);
+    const pageCount = Math.ceil(rows.length / 9);
+
+    if (pageCount <= 3) {
+      // Small deck: render synchronously, print immediately
+      buildPrintLayout(ct, rows);
+      window.print();
+    } else {
+      // Large deck: show progress, wait for layout to finish before printing
+      showToast(`Preparing ${pageCount} print pages…`, 'info', 15000);
+      buildPrintLayout(ct, rows, (pct) => {
+        if (pct >= 100) {
+          showToast('Print layout ready.', 'success', 2000);
+          window.print();
+        }
+      });
+    }
   });
   window.addEventListener('afterprint', clearPrintLayout);
 

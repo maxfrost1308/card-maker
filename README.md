@@ -28,7 +28,7 @@ Design, edit, and print custom cards from CSV data — entirely in the browser, 
 ## Quick Start
 
 ```bash
-git clone https://github.com/your-username/card-maker.git
+git clone https://github.com/maxfrost1308/card-maker.git
 cd card-maker
 npm install
 npm start

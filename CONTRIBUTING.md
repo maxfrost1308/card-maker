@@ -7,7 +7,7 @@ Thanks for your interest! Here's everything you need to get productive.
 ## Development Setup
 
 ```bash
-git clone https://github.com/your-username/card-maker.git
+git clone https://github.com/maxfrost1308/card-maker.git
 cd card-maker
 npm install
 npm start        # starts Vite dev server at http://localhost:5173
