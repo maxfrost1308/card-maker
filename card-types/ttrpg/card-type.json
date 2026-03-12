@@ -18,6 +18,7 @@
     }
   },
   "aggregations": [
+    { "label": "Total", "type": "total" },
     { "field": "digital_buy", "value": "Bought", "label": "Digitally Owned" },
     { "field": "to_play", "value": "Played", "label": "Played" }
   ],

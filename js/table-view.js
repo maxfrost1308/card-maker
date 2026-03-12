@@ -1068,10 +1068,12 @@ function updateAggregationBar(visibleIndices) {
   const rows = currentRows;
 
   for (const agg of currentCardType.aggregations) {
-    const count = visibleIndices.filter(i => {
-      const val = rows[i][agg.field];
-      return val === agg.value;
-    }).length;
+    const count = agg.type === 'total'
+      ? visibleIndices.length
+      : visibleIndices.filter(i => {
+          const val = rows[i][agg.field];
+          return val === agg.value;
+        }).length;
 
     const item = document.createElement('span');
     item.className = 'agg-item';
