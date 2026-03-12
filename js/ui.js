@@ -174,29 +174,46 @@ function collectIconValues(fields, rows) {
 /**
  * Render cards into the grid.
  * Preloads icons (if any icon fields exist) before rendering.
+ * REQ-051: shows a loading indicator during icon preload.
+ * REQ-060: appends an "add new card" button at the end.
  */
 export async function renderCards(cardType, rows, filteredIndices) {
-  // When filteredIndices is provided, only show those rows (in that order).
-  // Each entry is an index into `rows`; we preserve it for the edit button.
   const indices = filteredIndices || rows.map((_, i) => i);
-
-  // Preload icons for visible rows only
-  const visibleRows = indices.map(i => rows[i]);
-  const iconValues = collectIconValues(cardType.fields, visibleRows);
-  if (iconValues.length > 0) {
-    await preloadIcons(iconValues);
-  }
-
-  const showBacks = showBacksToggle.checked && !!cardType.backTemplate;
-  const width = cardType.cardSize?.width || '63.5mm';
-  const height = cardType.cardSize?.height || '88.9mm';
 
   cardGrid.innerHTML = '';
   cardGrid.classList.remove('empty-state');
   cardGrid.setAttribute('role', 'list');
   cardGrid.setAttribute('aria-label', 'Card deck');
 
-  for (const idx of indices) {
+  // REQ-051: show loading indicator while icons preload
+  const visibleRows = indices.map(i => rows[i]);
+  const iconValues = collectIconValues(cardType.fields, visibleRows);
+  if (iconValues.length > 0) {
+    const loader = document.createElement('div');
+    loader.className = 'loading-indicator';
+    loader.setAttribute('role', 'status');
+    loader.setAttribute('aria-live', 'polite');
+    loader.textContent = `Loading icons…`;
+    cardGrid.appendChild(loader);
+    await preloadIcons(iconValues);
+    loader.remove();
+  }
+
+  const showBacks = showBacksToggle.checked && !!cardType.backTemplate;
+  const width = cardType.cardSize?.width || '63.5mm';
+  const height = cardType.cardSize?.height || '88.9mm';
+
+  // Apply card-view search filter (REQ-065)
+  const searchInput = document.getElementById('card-search-input');
+  const searchQuery = searchInput ? searchInput.value.trim().toLowerCase() : '';
+  const displayIndices = searchQuery
+    ? indices.filter(i => {
+        const row = rows[i];
+        return cardType.fields.some(f => String(row[f.key] || '').toLowerCase().includes(searchQuery));
+      })
+    : indices;
+
+  for (const idx of displayIndices) {
     const row = rows[idx];
 
     const pair = document.createElement('div');
@@ -223,28 +240,87 @@ export async function renderCards(cardType, rows, filteredIndices) {
       pair.appendChild(backWrapper);
     }
 
-    // Edit button overlay — uses original row index
     const editBtn = document.createElement('button');
     editBtn.className = 'card-edit-btn';
     editBtn.textContent = '\u270E';
-    editBtn.title = 'Edit this card';
+    editBtn.title = 'Edit this card (click or press Enter)';
+    editBtn.setAttribute('aria-label', `Edit card ${idx + 1}`);
     editBtn.addEventListener('click', (e) => openEditModal(idx, e.currentTarget));
     pair.appendChild(editBtn);
 
     cardGrid.appendChild(pair);
   }
 
-  if (indices.length === 0) {
-    renderEmpty();
+  // REQ-060: "Add new card" button at end of grid (only when editing real data, not sample)
+  if (currentData) {
+    const addPair = document.createElement('div');
+    addPair.className = 'card-pair card-pair-add';
+    addPair.setAttribute('role', 'listitem');
+
+    const addBtn = document.createElement('button');
+    addBtn.className = 'card-add-btn';
+    addBtn.style.width = width;
+    addBtn.style.height = height;
+    addBtn.setAttribute('aria-label', 'Add new card');
+    addBtn.innerHTML = '<span class="card-add-icon">+</span><span class="card-add-label">Add card</span>';
+    addBtn.addEventListener('click', () => {
+      // Push a blank row and open edit modal for it
+      const emptyRow = {};
+      for (const f of cardType.fields) emptyRow[f.key] = '';
+      currentData.push(emptyRow);
+      setData(currentData);
+      openEditModal(currentData.length - 1, addBtn);
+    });
+
+    addPair.appendChild(addBtn);
+    cardGrid.appendChild(addPair);
   }
 
+  if (displayIndices.length === 0 && !currentData) {
+    renderEmpty();
+  }
 }
 
+/**
+ * Render the improved empty state (REQ-052).
+ */
 function renderEmpty() {
-  cardGrid.innerHTML = `<div class="empty-state">
-    <p>Select a card type and upload a CSV to get started.</p>
-    <p>Or pick a built-in card type to see sample cards.</p>
-  </div>`;
+  const ct = getActiveCardType();
+  const hasSampleData = ct && ct.sampleData && ct.sampleData.length > 0;
+
+  cardGrid.innerHTML = `
+    <div class="empty-state">
+      <div class="empty-state-icon" aria-hidden="true">
+        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
+          <rect x="8" y="12" width="30" height="42" rx="4" fill="#e8eef7" stroke="#4a6fa5" stroke-width="2"/>
+          <rect x="18" y="8" width="30" height="42" rx="4" fill="#f5f8ff" stroke="#4a6fa5" stroke-width="2"/>
+          <line x1="24" y1="22" x2="40" y2="22" stroke="#4a6fa5" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="24" y1="28" x2="40" y2="28" stroke="#b0bdd6" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="24" y1="34" x2="34" y2="34" stroke="#b0bdd6" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <h2 class="empty-state-title">Ready to make some cards?</h2>
+      <p class="empty-state-desc">Select a card type, then open a CSV to load your data.</p>
+      ${hasSampleData ? `
+        <button class="btn btn-primary empty-state-try-btn" id="empty-try-btn">
+          ▶ Try with sample data
+        </button>
+      ` : ''}
+      <p class="empty-state-hint">
+        Drag a CSV file anywhere on this area to load it.
+        <a href="docs/card-type-authoring.md" target="_blank" class="help-link">
+          How to create custom card types →
+        </a>
+      </p>
+    </div>`;
+
+  // Wire up the "Try with sample data" button
+  const tryBtn = cardGrid.querySelector('#empty-try-btn');
+  if (tryBtn && ct) {
+    tryBtn.addEventListener('click', () => {
+      rerenderActiveView(ct, ct.sampleData);
+    });
+  }
 }
 
 // Re-export showToast so existing callers that import from ui.js continue to work.
@@ -446,11 +522,44 @@ export function bindEvents() {
   // Save button
   saveBtn.addEventListener('click', () => saveToFile());
 
-  // Ctrl+S / Cmd+S keyboard shortcut
+  // ── Keyboard shortcuts (REQ-053) ────────────────────────────────────────────
+
   document.addEventListener('keydown', (e) => {
+    const tag = document.activeElement?.tagName;
+    const inInput = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+
+    // Ctrl+S / Cmd+S — save
     if ((e.ctrlKey || e.metaKey) && e.key === 's') {
       e.preventDefault();
       if (currentData) saveToFile();
+      return;
+    }
+
+    // Ctrl+P / Cmd+P — print
+    if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+      e.preventDefault();
+      printBtn.click();
+      return;
+    }
+
+    // Ctrl+F / Cmd+F — focus global search (table filter or card search)
+    if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+      e.preventDefault();
+      if (activeView === 'table') {
+        const globalFilter = document.querySelector('.table-global-filter');
+        if (globalFilter) { globalFilter.focus(); globalFilter.select(); }
+      } else {
+        const cardSearch = document.getElementById('card-search-input');
+        if (cardSearch) { cardSearch.focus(); cardSearch.select(); }
+      }
+      return;
+    }
+
+    // ? — show keyboard shortcuts reference
+    if (e.key === '?' && !inInput) {
+      e.preventDefault();
+      showShortcutsModal();
+      return;
     }
   });
 
@@ -473,6 +582,7 @@ export function bindEvents() {
       viewBtns.forEach(b => b.classList.toggle('active', b.dataset.view === view));
       cardGrid.hidden = view !== 'cards';
       tableViewEl.hidden = view !== 'table';
+      updateCardSearchVisibility();
       const ct = getActiveCardType();
       const data = currentData || ct?.sampleData;
       if (ct && data) rerenderActiveView(ct, data);
@@ -510,6 +620,62 @@ export function bindEvents() {
     if (s) downloadFile(s.name, s.fn(), s.mime);
   });
 
+  // ── Card search bar (REQ-065) ────────────────────────────────────────────────
+  const mainArea = document.getElementById('main-content');
+  const cardSearchBar = document.createElement('div');
+  cardSearchBar.className = 'card-search-bar';
+  cardSearchBar.hidden = true; // shown only in card view when data is loaded
+  cardSearchBar.innerHTML = `
+    <input id="card-search-input" type="search" class="card-search-input"
+           placeholder="Search cards…" aria-label="Search cards">
+  `;
+  mainArea.insertBefore(cardSearchBar, cardGrid);
+
+  let cardSearchDebounce = null;
+  cardSearchBar.querySelector('#card-search-input').addEventListener('input', () => {
+    clearTimeout(cardSearchDebounce);
+    cardSearchDebounce = setTimeout(() => {
+      const ct = getActiveCardType();
+      const data = currentData || ct?.sampleData;
+      if (ct && data) renderCards(ct, data, getFilteredIndices() || undefined);
+    }, 150);
+  });
+
+  // ── Drag-and-drop CSV (REQ-050) ──────────────────────────────────────────────
+  const mainAreaEl = document.getElementById('main-content');
+
+  mainAreaEl.addEventListener('dragover', (e) => {
+    if (e.dataTransfer.types.includes('Files')) {
+      e.preventDefault();
+      mainAreaEl.classList.add('drag-over');
+    }
+  });
+  mainAreaEl.addEventListener('dragenter', (e) => {
+    if (e.dataTransfer.types.includes('Files')) {
+      e.preventDefault();
+      mainAreaEl.classList.add('drag-over');
+    }
+  });
+  mainAreaEl.addEventListener('dragleave', (e) => {
+    // Only clear when leaving the main area entirely (not a child element)
+    if (!mainAreaEl.contains(e.relatedTarget)) {
+      mainAreaEl.classList.remove('drag-over');
+    }
+  });
+  mainAreaEl.addEventListener('drop', async (e) => {
+    e.preventDefault();
+    mainAreaEl.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (!file) return;
+    const ext = file.name.split('.').pop().toLowerCase();
+    if (!['csv', 'tsv', 'txt'].includes(ext)) {
+      showToast('Please drop a CSV, TSV, or TXT file.', 'error');
+      return;
+    }
+    await loadCsvFile(file, file.name);
+  });
+
+  // ── Hide raw file input when FSAPI is available ───────────────────────────
   // Hide raw file input when FSAPI is available (Open button is the primary UI)
   if (hasFSAPI) {
     csvUpload.style.display = 'none';
@@ -557,4 +723,55 @@ export function bindEvents() {
 export function autoSelect(id) {
   cardTypeSelect.value = id;
   selectCardType(id);
+}
+
+/**
+ * Show/hide the card search bar based on current view and state.
+ */
+function updateCardSearchVisibility() {
+  const bar = document.querySelector('.card-search-bar');
+  if (bar) bar.hidden = activeView !== 'cards';
+}
+
+/**
+ * Show a keyboard shortcuts reference modal (REQ-053).
+ */
+function showShortcutsModal() {
+  const existing = document.getElementById('shortcuts-modal');
+  if (existing) { existing.remove(); return; } // toggle
+
+  const modal = document.createElement('div');
+  modal.id = 'shortcuts-modal';
+  modal.className = 'shortcuts-modal';
+  modal.setAttribute('role', 'dialog');
+  modal.setAttribute('aria-modal', 'true');
+  modal.setAttribute('aria-label', 'Keyboard shortcuts');
+  modal.innerHTML = `
+    <div class="shortcuts-panel">
+      <div class="shortcuts-header">
+        <h2>Keyboard Shortcuts</h2>
+        <button class="btn edit-close-btn" id="shortcuts-close" aria-label="Close">&times;</button>
+      </div>
+      <table class="shortcuts-table">
+        <tbody>
+          <tr><td><kbd>Ctrl+S</kbd></td><td>Save / download CSV</td></tr>
+          <tr><td><kbd>Ctrl+P</kbd></td><td>Print / PDF</td></tr>
+          <tr><td><kbd>Ctrl+F</kbd></td><td>Focus search / filter</td></tr>
+          <tr><td><kbd>Escape</kbd></td><td>Close editor / cancel edit</td></tr>
+          <tr><td><kbd>←</kbd> <kbd>→</kbd></td><td>Previous / next card (in editor)</td></tr>
+          <tr><td><kbd>Enter</kbd></td><td>Edit focused table cell</td></tr>
+          <tr><td><kbd>↑</kbd> <kbd>↓</kbd> <kbd>←</kbd> <kbd>→</kbd></td><td>Navigate table cells</td></tr>
+          <tr><td><kbd>?</kbd></td><td>Show / hide this panel</td></tr>
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+  modal.querySelector('#shortcuts-close').addEventListener('click', () => modal.remove());
+  modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+  document.addEventListener('keydown', function handler(e) {
+    if (e.key === 'Escape') { modal.remove(); document.removeEventListener('keydown', handler); }
+  });
+  modal.querySelector('#shortcuts-close').focus();
 }

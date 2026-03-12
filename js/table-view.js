@@ -1,9 +1,23 @@
 /**
  * Table View module — sortable, filterable data table for card data.
+ *
+ * Pill/tag picker components live in js/table/pill-picker.js (REQ-021).
+ * This module re-exports createTagPicker and createPillPicker for
+ * backward compatibility (edit-view.js imports them from here).
  */
 import { openEditModal } from './edit-view.js';
 import { deleteRows, setRowData, rerenderActiveView, getData } from './state.js';
 import { showToast } from './toast.js';
+import {
+  hashTagColor,
+  isPillField,
+  createPill,
+  createTagPicker,
+  createPillPicker,
+} from './table/pill-picker.js';
+
+// Re-export pickers: edit-view.js imports createTagPicker/createPillPicker from this module
+export { createTagPicker, createPillPicker };
 
 let container = null;
 let currentCardType = null;
@@ -26,23 +40,8 @@ let filterTokensRef = null;
 let filterDropdownRef = null;
 let aggregationBarRef = null;
 
-// Predefined palette for hash-based tag colors
-const TAG_COLORS = [
-  '#6a4c93', '#2e86ab', '#c44569', '#5b7553', '#e07b00',
-  '#8b1a1a', '#3c3c6e', '#b8560b', '#d4a017', '#34495e',
-  '#7a5195', '#8b7355', '#e91e63', '#6b4c8a', '#7bb369',
-];
-
-/**
- * Get a consistent color for a tag value based on its name hash.
- */
-function hashTagColor(value) {
-  let hash = 0;
-  for (let i = 0; i < value.length; i++) {
-    hash = ((hash << 5) - hash + value.charCodeAt(i)) | 0;
-  }
-  return TAG_COLORS[Math.abs(hash) % TAG_COLORS.length];
-}
+// hashTagColor, isPillField, createPill, createTagPicker, createPillPicker
+// are now in js/table/pill-picker.js (REQ-021). Imported above.
 
 /**
  * Get the list of fields that should be visible in the table.
@@ -520,24 +519,7 @@ function createFilterToken(field, label, value) {
   return token;
 }
 
-// ===== Pill rendering =====
-
-function isPillField(field) {
-  return (field.type === 'select' || field.type === 'multi-select') && field.options;
-}
-
-function createPill(value, field) {
-  const pill = document.createElement('span');
-  pill.className = 'cell-pill';
-  pill.textContent = value;
-
-  if (field.pillColors && field.pillColors[value]) {
-    pill.style.backgroundColor = field.pillColors[value];
-    pill.style.color = '#fff';
-  }
-
-  return pill;
-}
+// ===== Cell rendering (uses createPill/isPillField/hashTagColor from pill-picker.js) =====
 
 function renderCellContent(td, value, field) {
   td.innerHTML = '';
@@ -574,216 +556,6 @@ function renderCellContent(td, value, field) {
     td.textContent = String(value);
   }
 }
-
-// ===== Tag Picker (shared component for tags/dynamic multi-select) =====
-
-export function createTagPicker(field, selectedValues, onChange, allRows) {
-  const wrapper = document.createElement('div');
-  wrapper.className = 'tag-picker';
-  wrapper._selectedValues = [...selectedValues];
-
-  // For "tags" type, compute options dynamically from all rows
-  let options = field.options || [];
-  if (field.type === 'tags' && allRows) {
-    const sep = field.separator || '|';
-    const optSet = new Set();
-    for (const row of allRows) {
-      const val = row[field.key];
-      if (val && typeof val === 'string') {
-        val.split(sep).map(v => v.trim()).filter(Boolean).forEach(v => optSet.add(v));
-      }
-    }
-    // Also include currently selected values
-    selectedValues.forEach(v => optSet.add(v));
-    options = [...optSet].sort();
-  }
-
-  const tagsContainer = document.createElement('div');
-  tagsContainer.className = 'tag-picker-tags';
-  wrapper.appendChild(tagsContainer);
-
-  const inputWrap = document.createElement('div');
-  inputWrap.className = 'tag-picker-input-wrap';
-  const input = document.createElement('input');
-  input.className = 'tag-picker-input';
-  input.placeholder = field.type === 'tags' ? 'Add or create...' : 'Add...';
-  input.type = 'text';
-  inputWrap.appendChild(input);
-
-  const dropdown = document.createElement('div');
-  dropdown.className = 'tag-picker-dropdown';
-  dropdown.hidden = true;
-  inputWrap.appendChild(dropdown);
-  wrapper.appendChild(inputWrap);
-
-  function renderTags() {
-    tagsContainer.innerHTML = '';
-    for (const val of wrapper._selectedValues) {
-      const pill = document.createElement('span');
-      pill.className = 'tag-pill';
-      if (field.pillColors && field.pillColors[val]) {
-        pill.style.backgroundColor = field.pillColors[val];
-        pill.style.color = '#fff';
-      } else if (field.type === 'tags') {
-        pill.style.backgroundColor = hashTagColor(val);
-        pill.style.color = '#fff';
-      }
-      const text = document.createElement('span');
-      text.className = 'tag-pill-text';
-      text.textContent = val;
-      const removeBtn = document.createElement('button');
-      removeBtn.className = 'tag-pill-remove';
-      removeBtn.type = 'button';
-      removeBtn.textContent = '\u00D7';
-      removeBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        wrapper._selectedValues = wrapper._selectedValues.filter(v => v !== val);
-        renderTags();
-        renderDropdown();
-        onChange(wrapper._selectedValues);
-      });
-      pill.append(text, removeBtn);
-      tagsContainer.appendChild(pill);
-    }
-  }
-
-  function addValue(val) {
-    if (val && !wrapper._selectedValues.includes(val)) {
-      wrapper._selectedValues.push(val);
-      input.value = '';
-      renderTags();
-      renderDropdown();
-      onChange(wrapper._selectedValues);
-      input.focus();
-    }
-  }
-
-  function renderDropdown() {
-    dropdown.innerHTML = '';
-    const q = input.value.toLowerCase().trim();
-    const available = options.filter(opt =>
-      !wrapper._selectedValues.includes(opt) &&
-      (!q || opt.toLowerCase().includes(q))
-    );
-
-    // For tags type: show "Create <value>" option if typed value is new
-    if (field.type === 'tags' && q && !options.some(o => o.toLowerCase() === q) && !wrapper._selectedValues.some(v => v.toLowerCase() === q)) {
-      const createBtn = document.createElement('button');
-      createBtn.className = 'tag-picker-option tag-picker-create';
-      createBtn.type = 'button';
-      createBtn.textContent = `Create "${input.value.trim()}"`;
-      createBtn.addEventListener('mousedown', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        addValue(input.value.trim());
-      });
-      dropdown.appendChild(createBtn);
-    }
-
-    if (available.length === 0 && !dropdown.firstChild) {
-      const empty = document.createElement('div');
-      empty.className = 'tag-picker-empty';
-      empty.textContent = q ? 'No matches' : 'All selected';
-      dropdown.appendChild(empty);
-    } else {
-      for (const opt of available) {
-        const btn = document.createElement('button');
-        btn.className = 'tag-picker-option';
-        btn.type = 'button';
-        const pill = document.createElement('span');
-        pill.className = 'cell-pill';
-        pill.textContent = opt;
-        if (field.pillColors && field.pillColors[opt]) {
-          pill.style.backgroundColor = field.pillColors[opt];
-          pill.style.color = '#fff';
-        }
-        btn.appendChild(pill);
-        btn.addEventListener('mousedown', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          addValue(opt);
-        });
-        dropdown.appendChild(btn);
-      }
-    }
-  }
-
-  input.addEventListener('focus', () => {
-    renderDropdown();
-    dropdown.hidden = false;
-  });
-
-  input.addEventListener('input', () => {
-    renderDropdown();
-    dropdown.hidden = false;
-  });
-
-  input.addEventListener('blur', () => {
-    setTimeout(() => { dropdown.hidden = true; }, 150);
-  });
-
-  input.addEventListener('keydown', (e) => {
-    e.stopPropagation();
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      const val = input.value.trim();
-      if (val) addValue(val);
-    }
-    if (e.key === 'Escape') {
-      dropdown.hidden = true;
-      input.blur();
-    }
-  });
-
-  renderTags();
-  return wrapper;
-}
-
-// ===== Pill Picker (click-to-toggle multi-select) =====
-
-export function createPillPicker(field, selectedValues, onChange) {
-  const wrapper = document.createElement('div');
-  wrapper.className = 'pill-picker';
-  wrapper._selectedValues = [...selectedValues];
-
-  function render() {
-    wrapper.innerHTML = '';
-    for (const opt of field.options) {
-      const pill = document.createElement('button');
-      pill.type = 'button';
-      pill.className = 'pill-picker-pill';
-      pill.textContent = opt;
-
-      const isSelected = wrapper._selectedValues.includes(opt);
-      if (isSelected) {
-        pill.classList.add('selected');
-        if (field.pillColors && field.pillColors[opt]) {
-          pill.style.backgroundColor = field.pillColors[opt];
-          pill.style.color = '#fff';
-          pill.style.borderColor = field.pillColors[opt];
-        }
-      }
-
-      pill.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        if (wrapper._selectedValues.includes(opt)) {
-          wrapper._selectedValues = wrapper._selectedValues.filter(v => v !== opt);
-        } else {
-          wrapper._selectedValues.push(opt);
-        }
-        render();
-        onChange(wrapper._selectedValues);
-      });
-
-      wrapper.appendChild(pill);
-    }
-  }
-
-  render();
-  return wrapper;
-}
-
 // ===== Inline cell editing =====
 
 let activeEditCell = null;
@@ -989,6 +761,7 @@ function rebuildTbody() {
 
   // Build rows
   tbody.innerHTML = '';
+  let rowDisplayIdx = 0;
   for (const idx of indices) {
     const tr = document.createElement('tr');
 
@@ -1024,18 +797,52 @@ function rebuildTbody() {
     cbTd.appendChild(cb);
     tr.appendChild(cbTd);
 
-    // Data cells — only visible fields, click to inline edit
-    for (const field of vFields) {
+    // Data cells — only visible fields, click or keyboard to inline edit (REQ-042)
+    vFields.forEach((field, colIdx) => {
       const td = document.createElement('td');
+      td.tabIndex = 0; // make focusable for keyboard nav
+      td.dataset.navRow = String(rowDisplayIdx);
+      td.dataset.navCol = String(colIdx);
       renderCellContent(td, rows[idx][field.key] || '', field);
+
       td.addEventListener('click', (e) => {
         e.stopPropagation();
         startCellEdit(td, idx, field);
       });
-      tr.appendChild(td);
-    }
 
-    tbody.appendChild(tr);
+      td.addEventListener('keydown', (e) => {
+        // Enter: start editing the focused cell
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          startCellEdit(td, idx, field);
+          return;
+        }
+        // Escape: cancel active edit (already handled inside inputs, but catch here too)
+        if (e.key === 'Escape' && activeEditCell) {
+          cancelCellEdit(activeEditCell, activeEditCell._editCtx.rowIdx, activeEditCell._editCtx.field);
+          td.focus();
+          return;
+        }
+        // Arrow keys: navigate to adjacent cell
+        if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+          e.preventDefault();
+          const curRow = parseInt(td.dataset.navRow);
+          const curCol = parseInt(td.dataset.navCol);
+          let targetRow = curRow, targetCol = curCol;
+          if (e.key === 'ArrowDown') targetRow++;
+          if (e.key === 'ArrowUp') targetRow--;
+          if (e.key === 'ArrowRight') targetCol++;
+          if (e.key === 'ArrowLeft') targetCol--;
+          const target = tbodyRef.querySelector(
+            `td[data-nav-row="${targetRow}"][data-nav-col="${targetCol}"]`
+          );
+          if (target) target.focus();
+        }
+      });
+
+      tr.appendChild(td);
+    });
+    rowDisplayIdx++;
   }
 
   rowCountRef.textContent = `Showing ${indices.length} of ${rows.length} rows`;
