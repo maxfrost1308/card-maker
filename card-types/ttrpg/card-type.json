@@ -140,14 +140,14 @@
       "label": "The Hook",
       "type": "text",
       "required": true,
-      "maxLength": 250,
+      "maxLength": 256,
       "verifiable": true
     },
     {
       "key": "if_you_like",
       "label": "Play This If You Like...",
       "type": "text",
-      "maxLength": 200,
+      "maxLength": 256,
       "verifiable": true
     },
     {
