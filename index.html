@@ -3,6 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Content Security Policy (REQ-082) -->
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self';
+    script-src 'self';
+    style-src 'self' 'unsafe-inline';
+    img-src 'self' https://game-icons.net data: blob:;
+    connect-src 'self' https://game-icons.net;
+  ">
   <title>Card Maker</title>
   <link rel="stylesheet" href="css/app.css">
   <link rel="stylesheet" href="css/table-view.css">
@@ -10,6 +18,8 @@
   <link rel="stylesheet" href="css/print.css">
 </head>
 <body>
+  <!-- Skip navigation link (REQ-044): visually hidden, revealed on focus -->
+  <a href="#card-grid" class="skip-link">Skip to main content</a>
   <header class="app-header">
     <div class="header-left">
       <button id="sidebar-toggle" class="btn sidebar-toggle" aria-label="Toggle sidebar">&#9776;</button>
@@ -31,7 +41,7 @@
 
   <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
   <div class="app-layout">
-    <aside class="sidebar" id="sidebar">
+    <aside class="sidebar" id="sidebar" role="complementary" aria-label="Card settings and controls">
       <section class="sidebar-section">
         <h2>Card Type</h2>
         <select id="card-type-select">
@@ -83,7 +93,7 @@
       </section>
     </aside>
 
-    <main class="main-area">
+    <main class="main-area" id="main-content">
       <div id="card-grid" class="card-grid">
         <div class="empty-state">
           <p>Select a card type and upload a CSV to get started.</p>
@@ -94,18 +104,19 @@
     </main>
   </div>
 
-  <div id="toast" class="toast" hidden></div>
+  <div id="toast" class="toast" hidden role="status" aria-live="polite" aria-atomic="true"></div>
 
   <div id="print-area" class="print-area"></div>
 
-  <!-- Edit Modal -->
-  <div id="edit-modal" class="edit-modal" hidden>
+  <!-- Edit Modal (REQ-040: role=dialog, aria-modal, aria-labelledby) -->
+  <div id="edit-modal" class="edit-modal" hidden
+       role="dialog" aria-modal="true" aria-labelledby="edit-title">
     <div class="edit-modal-panel">
       <div class="edit-modal-header">
-        <button class="btn edit-nav-btn" id="edit-prev" title="Previous card">&larr;</button>
+        <button class="btn edit-nav-btn" id="edit-prev" title="Previous card" aria-label="Previous card">&larr;</button>
         <h2 id="edit-title">Edit Card</h2>
-        <button class="btn edit-nav-btn" id="edit-next" title="Next card">&rarr;</button>
-        <button class="btn edit-close-btn" id="edit-close">&times;</button>
+        <button class="btn edit-nav-btn" id="edit-next" title="Next card" aria-label="Next card">&rarr;</button>
+        <button class="btn edit-close-btn" id="edit-close" aria-label="Close editor">&times;</button>
       </div>
       <div class="edit-modal-body" id="edit-modal-body"></div>
       <div class="edit-modal-footer">

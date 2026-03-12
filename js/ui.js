@@ -9,6 +9,8 @@ import { initEditView, openEditModal } from './edit-view.js';
 import { buildPrintLayout, clearPrintLayout } from './print-layout.js';
 import { getStarterSchema, getStarterFront, getStarterBack, getStarterCss } from './starter-files.js';
 import { preloadIcons } from './icon-loader.js';
+import { setData, registerRerenderFn, registerGetActiveCardTypeFn } from './state.js';
+import { showToast } from './toast.js';
 
 // DOM refs
 const cardTypeSelect = document.getElementById('card-type-select');
@@ -32,7 +34,7 @@ const customBack = document.getElementById('custom-back');
 const customCss = document.getElementById('custom-css');
 const customUploadBtn = document.getElementById('custom-upload-btn');
 
-let currentData = null;        // parsed CSV rows
+let currentData = null;        // parsed CSV rows (mirrored in state.js)
 let fileHandle = null;         // File System Access API handle (Chromium only)
 let activeView = 'cards';      // 'cards' | 'table'
 const hasFSAPI = 'showOpenFilePicker' in window;
@@ -51,15 +53,10 @@ function closeSidebar() {
   sidebarBackdrop.classList.remove('visible');
 }
 
-// State accessors for external modules
-export function getData() { return currentData; }
-export function setRowData(index, row) { if (currentData) currentData[index] = row; }
+// Re-export state accessors so existing callers continue to work.
+// Canonical implementations now live in state.js.
+export { getData, setRowData, deleteRows } from './state.js';
 export function getActiveCardType() { return registry.get(cardTypeSelect.value); }
-export function deleteRows(indices) {
-  if (!currentData) return;
-  const sorted = [...indices].sort((a, b) => b - a);
-  for (const i of sorted) currentData.splice(i, 1);
-}
 
 /**
  * Populate the card type dropdown with all registered types.
@@ -196,12 +193,15 @@ export async function renderCards(cardType, rows, filteredIndices) {
 
   cardGrid.innerHTML = '';
   cardGrid.classList.remove('empty-state');
+  cardGrid.setAttribute('role', 'list');
+  cardGrid.setAttribute('aria-label', 'Card deck');
 
   for (const idx of indices) {
     const row = rows[idx];
 
     const pair = document.createElement('div');
     pair.className = 'card-pair';
+    pair.setAttribute('role', 'listitem');
 
     // Front
     const frontWrapper = document.createElement('div');
@@ -228,7 +228,7 @@ export async function renderCards(cardType, rows, filteredIndices) {
     editBtn.className = 'card-edit-btn';
     editBtn.textContent = '\u270E';
     editBtn.title = 'Edit this card';
-    editBtn.addEventListener('click', () => openEditModal(idx));
+    editBtn.addEventListener('click', (e) => openEditModal(idx, e.currentTarget));
     pair.appendChild(editBtn);
 
     cardGrid.appendChild(pair);
@@ -247,16 +247,8 @@ function renderEmpty() {
   </div>`;
 }
 
-/**
- * Show a toast notification.
- */
-export function showToast(msg, type = 'info', duration = 4000) {
-  toastEl.textContent = msg;
-  toastEl.className = 'toast' + (type !== 'info' ? ` toast-${type}` : '');
-  toastEl.hidden = false;
-  clearTimeout(toastEl._timeout);
-  toastEl._timeout = setTimeout(() => { toastEl.hidden = true; }, duration);
-}
+// Re-export showToast so existing callers that import from ui.js continue to work.
+export { showToast } from './toast.js';
 
 /**
  * Trigger a file download.
@@ -322,7 +314,28 @@ async function loadCsvFile(file, displayName) {
 
   // Remap CSV headers (labels or old keys) to current field keys
   data = remapHeaders(data, ct.fields);
+
+  // REQ-056: warn when no loaded columns match schema fields
+  const schemaKeys = new Set(ct.fields.map(f => f.key));
+  const matchedFields = Object.keys(data[0] || {}).filter(k => schemaKeys.has(k));
+  if (matchedFields.length === 0 && ct.fields.length > 0) {
+    const loaded = Object.keys(data[0] || {}).slice(0, 5).join(', ');
+    const expected = ct.fields.slice(0, 5).map(f => f.key).join(', ');
+    showToast(
+      `No CSV columns match "${ct.name}" fields. ` +
+      `Found: ${loaded || '(none)'}. Expected: ${expected}…`,
+      'error',
+      8000,
+    );
+  } else if (matchedFields.length < ct.fields.length) {
+    const unmatched = ct.fields.map(f => f.key).filter(k => !matchedFields.includes(k));
+    if (unmatched.length > 0) {
+      console.warn(`[card-maker] Unmatched schema fields: ${unmatched.join(', ')}`);
+    }
+  }
+
   currentData = data;
+  setData(data); // sync to state.js
   rerenderActiveView(ct, data);
   updateSaveState();
   showFilename(displayName || file.name);
@@ -391,6 +404,7 @@ function showFilename(name) {
 function clearFileState() {
   fileHandle = null;
   currentData = null;
+  setData(null); // sync to state.js
   csvUpload.value = '';
   updateSaveState();
   showFilename(null);
@@ -398,8 +412,14 @@ function clearFileState() {
 
 /**
  * Bind all event listeners.
+ * Also registers shared-state callbacks so table-view and edit-view
+ * can access the active card type and trigger re-renders via state.js
+ * without importing from ui.js directly.
  */
 export function bindEvents() {
+  // Register state.js callbacks (breaks bidirectional dep with table-view/edit-view)
+  registerRerenderFn((ct, rows) => rerenderActiveView(ct, rows));
+  registerGetActiveCardTypeFn(() => registry.get(cardTypeSelect.value));
   // Sidebar toggle (mobile)
   sidebarToggleBtn.addEventListener('click', () => {
     sidebarEl.classList.contains('open') ? closeSidebar() : openSidebar();

@@ -1,12 +1,15 @@
 /**
  * Edit View module — modal for editing individual card data.
  */
-import { getData, setRowData, getActiveCardType, rerenderActiveView } from './ui.js';
-import { showToast } from './ui.js';
+import { getData, setRowData, getActiveCardType, rerenderActiveView } from './state.js';
+import { showToast } from './toast.js';
 import { createPillPicker, createTagPicker } from './table-view.js';
+import { createFocusTrap } from './focus-trap.js';
 
 let currentEditIndex = null;
 let initialized = false;
+let _focusTrap = null;
+let _lastTrigger = null; // element that opened the modal (for focus return)
 
 /**
  * Initialize edit view event listeners (call once from bindEvents).
@@ -43,8 +46,11 @@ export function initEditView() {
 
 /**
  * Open the edit modal for a given row index.
+ * @param {number} rowIndex
+ * @param {HTMLElement} [triggerEl] - Element to return focus to when modal closes
  */
-export function openEditModal(rowIndex) {
+export function openEditModal(rowIndex, triggerEl) {
+  _lastTrigger = triggerEl || document.activeElement || null;
   const cardType = getActiveCardType();
   const data = getData() || cardType?.sampleData;
   if (!data || !cardType || rowIndex < 0 || rowIndex >= data.length) return;
@@ -148,9 +154,11 @@ export function openEditModal(rowIndex) {
 
   modal.hidden = false;
 
-  // Focus first input
-  const firstInput = body.querySelector('input, select');
-  if (firstInput) firstInput.focus();
+  // Activate focus trap (REQ-041): keeps Tab navigation inside the modal
+  const panel = modal.querySelector('.edit-modal-panel');
+  if (_focusTrap) _focusTrap.deactivate();
+  _focusTrap = createFocusTrap(panel, { returnFocus: _lastTrigger });
+  _focusTrap.activate();
 }
 
 /**
@@ -227,11 +235,16 @@ function navigateEdit(direction) {
 }
 
 /**
- * Close the edit modal.
+ * Close the edit modal and restore focus.
  */
 function closeEditModal() {
   const modal = document.getElementById('edit-modal');
   modal.hidden = true;
   document.getElementById('edit-modal-body').innerHTML = '';
   currentEditIndex = null;
+  // Deactivate focus trap and return focus to the trigger element
+  if (_focusTrap) {
+    _focusTrap.deactivate();
+    _focusTrap = null;
+  }
 }

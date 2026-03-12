@@ -2,8 +2,8 @@
  * Table View module — sortable, filterable data table for card data.
  */
 import { openEditModal } from './edit-view.js';
-import { deleteRows, setRowData, rerenderActiveView, getData } from './ui.js';
-import { showToast } from './ui.js';
+import { deleteRows, setRowData, rerenderActiveView, getData } from './state.js';
+import { showToast } from './toast.js';
 
 let container = null;
 let currentCardType = null;
