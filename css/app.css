@@ -1,9 +1,6 @@
 /* ===== Dark Mode (REQ-054) ===== */
-:root {
-  color-scheme: light dark;
-}
-
 html.dark {
+  color-scheme: dark;
   --bg: #1a1a2e;
   --surface: #16213e;
   --border: #2a2a4a;

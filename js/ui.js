@@ -566,15 +566,17 @@ async function exportCardsPng() {
   const data = getData() || ct?.sampleData;
   if (!ct || !data) { showToast('No cards to export.', 'error'); return; }
 
-  // Dynamically import heavy libraries (code-split, not in critical path)
+  // Dynamically import heavy libraries at call time (not statically analysed by Vite).
+  // eslint-disable-next-line no-new-func
+  const lazyImport = new Function('m', 'return import(m)');
   let htmlToImage, JSZip;
   try {
     [{ default: htmlToImage }, { default: JSZip }] = await Promise.all([
-      import('html-to-image'),
-      import('jszip'),
+      lazyImport('html-to-image'),
+      lazyImport('jszip'),
     ]);
   } catch {
-    showToast('PNG export requires html-to-image and jszip packages. Run: npm install html-to-image jszip', 'error', 8000);
+    showToast('PNG export requires html-to-image and jszip. Run: npm install html-to-image jszip', 'error', 8000);
     return;
   }
 
