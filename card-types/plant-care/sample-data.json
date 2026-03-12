@@ -14,7 +14,8 @@
     "care_tips": "Let soil dry completely between waterings. Tolerates neglect well. Wipe leaves to remove dust.",
     "common_issues": "Overwatering|Root Rot",
     "soil_type": "Well-draining cactus mix",
-    "link": ""
+    "link": "https://en.wikipedia.org/wiki/Dracaena_trifasciata",
+    "icon": "https://game-icons.net/icons/ffffff/000000/1x1/lorc/snake.svg"
   },
   {
     "name": "Pothos",
@@ -31,7 +32,8 @@
     "care_tips": "Trim regularly to encourage bushy growth. Can grow in water indefinitely. Very forgiving.",
     "common_issues": "Yellowing|Root Rot|Mealybugs",
     "soil_type": "Standard potting mix",
-    "link": ""
+    "link": "https://en.wikipedia.org/wiki/Epipremnum_aureum",
+    "icon": "https://game-icons.net/icons/ffffff/000000/1x1/delapouite/vine-leaf.svg"
   },
   {
     "name": "Basil",
@@ -48,7 +50,8 @@
     "care_tips": "Pinch flower buds to prolong leaf production. Harvest from the top down. Needs 6-8 hours of sun.",
     "common_issues": "Leggy Growth|Fungus Gnats",
     "soil_type": "Rich well-draining soil",
-    "link": ""
+    "link": "https://en.wikipedia.org/wiki/Basil",
+    "icon": "https://game-icons.net/icons/ffffff/000000/1x1/delapouite/herbs-bundle.svg"
   },
   {
     "name": "Fiddle Leaf Fig",
@@ -65,7 +68,8 @@
     "care_tips": "Rotate quarterly for even growth. Avoid drafts and sudden moves. Water when top inch is dry.",
     "common_issues": "Leaf Drop|Brown Tips|Root Rot|Spider Mites",
     "soil_type": "Well-draining indoor mix with perlite",
-    "link": ""
+    "link": "https://en.wikipedia.org/wiki/Ficus_lyrata",
+    "icon": "https://game-icons.net/icons/ffffff/000000/1x1/delapouite/oak.svg"
   },
   {
     "name": "Boston Fern",
@@ -82,7 +86,8 @@
     "care_tips": "Mist daily or use a pebble tray. Keep soil consistently moist but not soggy. Great in bathrooms.",
     "common_issues": "Leaf Drop|Brown Tips|Spider Mites|Scale",
     "soil_type": "Peat-based potting mix",
-    "link": ""
+    "link": "https://en.wikipedia.org/wiki/Nephrolepis_exaltata",
+    "icon": "https://game-icons.net/icons/ffffff/000000/1x1/delapouite/fern.svg"
   },
   {
     "name": "Lavender",
@@ -98,6 +103,8 @@
     "seasons": "Spring|Summer",
     "care_tips": "Needs excellent drainage and air circulation. Prune after flowering to maintain shape. Do not overwater.",
     "common_issues": "Root Rot|Leggy Growth",
-    "soil_type": "Sandy, alkaline, well-draining"
+    "soil_type": "Sandy, alkaline, well-draining",
+    "link": "https://en.wikipedia.org/wiki/Lavandula_angustifolia",
+    "icon": "https://game-icons.net/icons/ffffff/000000/1x1/lorc/flower-twirl.svg"
   }
 ]

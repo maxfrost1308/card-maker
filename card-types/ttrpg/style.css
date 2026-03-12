@@ -57,21 +57,21 @@
   line-height: 1.4;
 }
 
-/* Genre colors */
-.genre-fantasy { background: #6a4c93; }
-.genre-sci-fi { background: #2e86ab; }
-.genre-horror { background: #8b1a1a; }
-.genre-dark { background: #444; }
-.genre-modern { background: #5b7553; }
-.genre-romance { background: #c44569; }
-.genre-mystery { background: #3c3c6e; }
-.genre-weird { background: #b8560b; }
-.genre-gonzo { background: #e07b00; }
-.genre-cozy { background: #7bb369; }
-.genre-drama { background: #7a5195; }
-.genre-comedy { background: #d4a017; }
-.genre-supernatural { background: #6b4c8a; }
-.genre-any { background: #666; }
+/* Genre colors — class names match capitalized genre values from schema */
+.genre-Fantasy { background: #6a4c93; }
+.genre-Sci-Fi { background: #2e86ab; }
+.genre-Dark { background: #444; }
+.genre-Modern { background: #5b7553; }
+.genre-Real-World { background: #8b7355; }
+.genre-Romance { background: #c44569; }
+.genre-Mystery { background: #3c3c6e; }
+.genre-Weird { background: #b8560b; }
+.genre-Gonzo { background: #e07b00; }
+.genre-Cozy { background: #7bb369; }
+.genre-Drama { background: #7a5195; }
+.genre-Supernatural { background: #6b4c8a; }
+.genre-Music { background: #e91e63; }
+.genre-Any { background: #666; }
 
 .ttrpg-body {
   flex: 1;
@@ -139,14 +139,20 @@
 }
 
 .ttrpg-back-icon {
-  width: 1.6in;
-  height: 1.6in;
+  width: 1.3in;
+  height: 1.3in;
   opacity: 0.85;
 }
 
+.ttrpg-back-icon svg,
 .ttrpg-back-icon img {
   width: 100%;
   height: 100%;
+  object-fit: contain;
+}
+
+.ttrpg-back-icon img.icon-img {
+  mix-blend-mode: screen;
 }
 
 .ttrpg-back-title {
@@ -205,7 +211,7 @@
   border-radius: 3px;
 }
 
-.ttrpg-back-qr img {
+.ttrpg-back-qr svg {
   width: 0.85in;
   height: 0.85in;
   display: block;

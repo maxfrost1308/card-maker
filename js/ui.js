@@ -3,11 +3,12 @@
  */
 import * as registry from './card-type-registry.js';
 import { renderCard } from './template-renderer.js';
-import { parseCsv, generateCsv } from './csv-parser.js';
+import { parseCsv, generateCsv, remapHeaders } from './csv-parser.js';
 import { renderTable, destroyTable } from './table-view.js';
 import { initEditView, openEditModal } from './edit-view.js';
 import { buildPrintLayout, clearPrintLayout } from './print-layout.js';
 import { getStarterSchema, getStarterFront, getStarterBack, getStarterCss } from './starter-files.js';
+import { preloadIcons } from './icon-loader.js';
 
 // DOM refs
 const cardTypeSelect = document.getElementById('card-type-select');
@@ -35,6 +36,20 @@ let currentData = null;        // parsed CSV rows
 let fileHandle = null;         // File System Access API handle (Chromium only)
 let activeView = 'cards';      // 'cards' | 'table'
 const hasFSAPI = 'showOpenFilePicker' in window;
+
+// Sidebar toggle for mobile
+const sidebarEl = document.getElementById('sidebar');
+const sidebarToggleBtn = document.getElementById('sidebar-toggle');
+const sidebarBackdrop = document.getElementById('sidebar-backdrop');
+
+function openSidebar() {
+  sidebarEl.classList.add('open');
+  sidebarBackdrop.classList.add('visible');
+}
+function closeSidebar() {
+  sidebarEl.classList.remove('open');
+  sidebarBackdrop.classList.remove('visible');
+}
 
 // State accessors for external modules
 export function getData() { return currentData; }
@@ -129,7 +144,7 @@ function renderFieldReference(fields) {
 /**
  * Re-render the currently active view (cards or table).
  */
-export function rerenderActiveView(cardType, rows) {
+export async function rerenderActiveView(cardType, rows) {
   if (!cardType) cardType = getActiveCardType();
   if (!rows) rows = currentData || cardType?.sampleData;
   if (!cardType || !rows) return;
@@ -137,14 +152,37 @@ export function rerenderActiveView(cardType, rows) {
   if (activeView === 'table') {
     renderTable(cardType, rows);
   } else {
-    renderCards(cardType, rows);
+    await renderCards(cardType, rows);
   }
 }
 
 /**
- * Render cards into the grid.
+ * Collect all icon field values from rows for preloading.
  */
-export function renderCards(cardType, rows) {
+function collectIconValues(fields, rows) {
+  const iconFields = fields.filter(f => f.type === 'icon');
+  if (iconFields.length === 0) return [];
+  const values = [];
+  for (const row of rows) {
+    for (const f of iconFields) {
+      const v = row[f.key];
+      if (v && typeof v === 'string' && v.trim()) values.push(v.trim());
+    }
+  }
+  return values;
+}
+
+/**
+ * Render cards into the grid.
+ * Preloads icons (if any icon fields exist) before rendering.
+ */
+export async function renderCards(cardType, rows) {
+  // Preload icons for icon-type fields
+  const iconValues = collectIconValues(cardType.fields, rows);
+  if (iconValues.length > 0) {
+    await preloadIcons(iconValues);
+  }
+
   const showBacks = showBacksToggle.checked && !!cardType.backTemplate;
   const width = cardType.cardSize?.width || '63.5mm';
   const height = cardType.cardSize?.height || '88.9mm';
@@ -164,7 +202,7 @@ export function renderCards(cardType, rows) {
     frontWrapper.style.width = width;
     frontWrapper.style.height = height;
     frontWrapper.dataset.cardType = cardType.id;
-    frontWrapper.innerHTML = renderCard(cardType.frontTemplate, row, cardType.fields);
+    frontWrapper.innerHTML = renderCard(cardType.frontTemplate, row, cardType.fields, cardType);
     pair.appendChild(frontWrapper);
 
     // Back
@@ -174,7 +212,7 @@ export function renderCards(cardType, rows) {
       backWrapper.style.width = width;
       backWrapper.style.height = height;
       backWrapper.dataset.cardType = cardType.id;
-      backWrapper.innerHTML = renderCard(cardType.backTemplate, row, cardType.fields);
+      backWrapper.innerHTML = renderCard(cardType.backTemplate, row, cardType.fields, cardType);
       pair.appendChild(backWrapper);
     }
 
@@ -192,6 +230,7 @@ export function renderCards(cardType, rows) {
   if (rows.length === 0) {
     renderEmpty();
   }
+
 }
 
 function renderEmpty() {
@@ -265,7 +304,7 @@ async function loadCsvFile(file, displayName) {
     return;
   }
 
-  const { data, errors } = await parseCsv(file);
+  let { data, errors } = await parseCsv(file);
   if (errors.length > 0) {
     showToast(`CSV warnings: ${errors[0]}`, 'error');
   }
@@ -274,6 +313,8 @@ async function loadCsvFile(file, displayName) {
     return;
   }
 
+  // Remap CSV headers (labels or old keys) to current field keys
+  data = remapHeaders(data, ct.fields);
   currentData = data;
   rerenderActiveView(ct, data);
   updateSaveState();
@@ -352,6 +393,12 @@ function clearFileState() {
  * Bind all event listeners.
  */
 export function bindEvents() {
+  // Sidebar toggle (mobile)
+  sidebarToggleBtn.addEventListener('click', () => {
+    sidebarEl.classList.contains('open') ? closeSidebar() : openSidebar();
+  });
+  sidebarBackdrop.addEventListener('click', closeSidebar);
+
   // Card type selection
   cardTypeSelect.addEventListener('change', () => {
     clearFileState();

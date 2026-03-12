@@ -204,9 +204,42 @@
   font-style: italic;
 }
 
+/* Icon in header */
+.pc-header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.pc-icon {
+  width: 8mm;
+  height: 8mm;
+  flex-shrink: 0;
+}
+
+.pc-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* QR code and link */
 .pc-link-section {
   padding: 2mm 3mm;
   margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 2mm;
+}
+
+.pc-qr {
+  width: 12mm;
+  height: 12mm;
+  flex-shrink: 0;
+}
+
+.pc-qr svg {
+  width: 100%;
+  height: 100%;
 }
 
 .pc-link {
@@ -215,10 +248,25 @@
   text-decoration: underline;
 }
 
+/* Back footer with icon */
 .pc-back-footer {
   margin-top: auto;
   padding: 2mm 3mm;
-  text-align: right;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2mm;
+}
+
+.pc-back-icon {
+  width: 5mm;
+  height: 5mm;
+  opacity: 0.4;
+}
+
+.pc-back-icon svg {
+  width: 100%;
+  height: 100%;
 }
 
 .pc-category-small {

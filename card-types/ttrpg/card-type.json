@@ -6,101 +6,276 @@
     "width": "63.5mm",
     "height": "88.9mm"
   },
+  "colorMapping": {
+    "back_color": {
+      "field": "complexity",
+      "map": {
+        "Easy": "#7bb369",
+        "Medium": "#d4a017",
+        "Hard": "#c0392b"
+      },
+      "default": "#607d8b"
+    }
+  },
+  "aggregations": [
+    { "field": "digital_buy", "value": "Bought", "label": "Digitally Owned" },
+    { "field": "to_play", "value": "Played", "label": "Played" }
+  ],
   "fields": [
     {
-      "key": "name",
-      "label": "Game Name",
+      "key": "title",
+      "label": "Title",
       "type": "text",
-      "required": true
+      "required": true,
+      "verifiable": true
     },
     {
-      "key": "genres",
-      "label": "Genres",
+      "key": "mechanical_style",
+      "label": "Mechanical Style",
+      "type": "select",
+      "options": ["Classic", "Traditional", "OSR", "Story Game", "Tactical", "Creative Writing", "Worldbuilding", "Parlour Game"],
+      "pillColors": {
+        "Classic": "#6a4c93",
+        "Traditional": "#2e86ab",
+        "OSR": "#8b1a1a",
+        "Story Game": "#c44569",
+        "Tactical": "#34495e",
+        "Creative Writing": "#7a5195",
+        "Worldbuilding": "#5b7553",
+        "Parlour Game": "#e07b00"
+      },
+      "verifiable": true
+    },
+    {
+      "key": "product_type",
+      "label": "Product Type",
+      "type": "select",
+      "options": ["TTRPG", "Board Game", "Card Game", "Box Set", "Zine", "Pamphlet"],
+      "pillColors": {
+        "TTRPG": "#2e86ab",
+        "Board Game": "#6a4c93",
+        "Card Game": "#c44569",
+        "Box Set": "#34495e",
+        "Zine": "#e07b00",
+        "Pamphlet": "#5b7553"
+      },
+      "verifiable": true
+    },
+    {
+      "key": "genre",
+      "label": "Genre",
       "type": "multi-select",
       "separator": "|",
-      "options": ["fantasy", "sci-fi", "horror", "dark", "modern", "romance", "mystery", "weird", "gonzo", "cozy", "drama", "comedy", "supernatural", "any"],
+      "options": ["Fantasy", "Sci-Fi", "Dark", "Modern", "Real-World", "Romance", "Mystery", "Weird", "Gonzo", "Cozy", "Drama", "Supernatural", "Music", "Any"],
       "pillColors": {
-        "fantasy": "#6a4c93",
-        "sci-fi": "#2e86ab",
-        "horror": "#8b1a1a",
-        "dark": "#444444",
-        "modern": "#5b7553",
-        "romance": "#c44569",
-        "mystery": "#3c3c6e",
-        "weird": "#b8560b",
-        "gonzo": "#e07b00",
-        "cozy": "#7bb369",
-        "drama": "#7a5195",
-        "comedy": "#d4a017",
-        "supernatural": "#6b4c8a",
-        "any": "#666666"
-      }
+        "Fantasy": "#6a4c93",
+        "Sci-Fi": "#2e86ab",
+        "Dark": "#444444",
+        "Modern": "#5b7553",
+        "Real-World": "#8b7355",
+        "Romance": "#c44569",
+        "Mystery": "#3c3c6e",
+        "Weird": "#b8560b",
+        "Gonzo": "#e07b00",
+        "Cozy": "#7bb369",
+        "Drama": "#7a5195",
+        "Supernatural": "#6b4c8a",
+        "Music": "#e91e63",
+        "Any": "#666666"
+      },
+      "verifiable": true
+    },
+    {
+      "key": "players",
+      "label": "Players",
+      "type": "text",
+      "verifiable": true
+    },
+    {
+      "key": "time",
+      "label": "Time (min)",
+      "type": "text",
+      "verifiable": true
+    },
+    {
+      "key": "complexity",
+      "label": "Complexity",
+      "type": "select",
+      "options": ["Easy", "Medium", "Hard"],
+      "pillColors": {
+        "Easy": "#7bb369",
+        "Medium": "#d4a017",
+        "Hard": "#c0392b"
+      },
+      "verifiable": true
+    },
+    {
+      "key": "gm_structure",
+      "label": "GM Structure",
+      "type": "select",
+      "options": ["GM-led", "Facilitated", "GM-less", "Solo"],
+      "pillColors": {
+        "GM-led": "#2e86ab",
+        "Facilitated": "#6a4c93",
+        "GM-less": "#5b7553",
+        "Solo": "#e07b00"
+      },
+      "verifiable": true
+    },
+    {
+      "key": "campaign_type",
+      "label": "Campaign Type",
+      "type": "multi-select",
+      "separator": "|",
+      "options": ["One-Shot", "Short", "Long"],
+      "pillColors": {
+        "One-Shot": "#e07b00",
+        "Short": "#2e86ab",
+        "Long": "#6a4c93"
+      },
+      "verifiable": true
     },
     {
       "key": "hook",
       "label": "The Hook",
       "type": "text",
       "required": true,
-      "maxLength": 250
+      "maxLength": 250,
+      "verifiable": true
     },
     {
-      "key": "like",
+      "key": "if_you_like",
       "label": "Play This If You Like...",
       "type": "text",
-      "maxLength": 200
+      "maxLength": 200,
+      "verifiable": true
+    },
+    {
+      "key": "bg_icon",
+      "label": "Background Icon",
+      "type": "icon",
+      "verifiable": true
     },
     {
       "key": "components",
       "label": "Components Needed",
-      "type": "text"
-    },
-    {
-      "key": "players",
-      "label": "Players",
-      "type": "text"
-    },
-    {
-      "key": "duration",
-      "label": "Duration (min)",
-      "type": "text"
-    },
-    {
-      "key": "gm_style",
-      "label": "GM Style",
-      "type": "select",
-      "options": ["GM-led", "Facilitated", "GM-less", "Solo"]
-    },
-    {
-      "key": "product_type",
-      "label": "Product Type",
-      "type": "select",
-      "options": ["Story Game", "Traditional RPG", "OSR", "Narrative RPG", "LARP", "Board Game Hybrid"]
-    },
-    {
-      "key": "format",
-      "label": "Format",
-      "type": "select",
-      "options": ["Pamphlet", "Zine", "Full Book", "Single Page", "Business Card", "Digital Only"]
-    },
-    {
-      "key": "back_color",
-      "label": "Back Color",
-      "type": "text"
-    },
-    {
-      "key": "icon",
-      "label": "Icon",
-      "type": "image"
-    },
-    {
-      "key": "qr_code",
-      "label": "QR Code",
-      "type": "image"
+      "type": "multi-select",
+      "separator": "|",
+      "options": [
+        "Custom cards",
+        "Standard cards",
+        "Character sheets",
+        "Polyhedral dice",
+        "D6 only",
+        "Stackable dice",
+        "Jenga tower",
+        "Tokens",
+        "Coins",
+        "Map",
+        "Playmat",
+        "Paper & pencil",
+        "Rules booklet",
+        "One page RPG",
+        "No components",
+        "Specialty"
+      ],
+      "pillColors": {
+        "Custom cards": "#c44569",
+        "Standard cards": "#2e86ab",
+        "Character sheets": "#6a4c93",
+        "Polyhedral dice": "#8b1a1a",
+        "D6 only": "#e07b00",
+        "Stackable dice": "#d4a017",
+        "Jenga tower": "#b8560b",
+        "Tokens": "#34495e",
+        "Coins": "#d4a017",
+        "Map": "#5b7553",
+        "Playmat": "#3c3c6e",
+        "Paper & pencil": "#8b7355",
+        "Rules booklet": "#7a5195",
+        "One page RPG": "#e91e63",
+        "No components": "#666666",
+        "Specialty": "#6b4c8a"
+      },
+      "verifiable": true
     },
     {
       "key": "link",
       "label": "Link",
-      "type": "url"
+      "type": "url",
+      "verifiable": true
+    },
+    {
+      "key": "back_color",
+      "label": "Back Color",
+      "type": "text",
+      "hidden": true
+    },
+    {
+      "key": "verified_fields",
+      "label": "Verified Fields",
+      "type": "text",
+      "hidden": true
+    },
+    {
+      "key": "to_play",
+      "label": "To Play",
+      "type": "select",
+      "options": ["ToPlay", "Played"],
+      "pillColors": {
+        "ToPlay": "#2e86ab",
+        "Played": "#7bb369"
+      }
+    },
+    {
+      "key": "to_run",
+      "label": "To Run",
+      "type": "select",
+      "options": ["ToRun", "Dropped", "Ran"],
+      "pillColors": {
+        "ToRun": "#2e86ab",
+        "Dropped": "#c0392b",
+        "Ran": "#7bb369"
+      }
+    },
+    {
+      "key": "digital_buy",
+      "label": "Digital Buy",
+      "type": "select",
+      "options": ["ToBuy", "Bought", "Dropped"],
+      "pillColors": {
+        "ToBuy": "#2e86ab",
+        "Bought": "#7bb369",
+        "Dropped": "#c0392b"
+      }
+    },
+    {
+      "key": "digital_print",
+      "label": "Digital Print",
+      "type": "select",
+      "options": ["ToPrint", "Dropped", "Printed"],
+      "pillColors": {
+        "ToPrint": "#2e86ab",
+        "Dropped": "#c0392b",
+        "Printed": "#7bb369"
+      }
+    },
+    {
+      "key": "physical_buy",
+      "label": "Physical Buy",
+      "type": "select",
+      "options": ["Dropped", "ToBuy", "Bought"],
+      "pillColors": {
+        "Dropped": "#c0392b",
+        "ToBuy": "#2e86ab",
+        "Bought": "#7bb369"
+      }
+    },
+    {
+      "key": "collections",
+      "label": "Collections",
+      "type": "tags",
+      "separator": "|"
     }
   ]
 }
