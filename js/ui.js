@@ -8,7 +8,7 @@
  */
 
 import * as registry from './card-type-registry.js';
-import { renderCard } from './template-renderer.js';
+import { renderCard, escapeHtml } from './template-renderer.js';
 import { renderTable, getFilteredIndices } from './table-view.js';
 import { initEditView, openEditModal } from './edit-view.js';
 import { buildPrintLayout, clearPrintLayout } from './print-layout.js';
@@ -25,6 +25,7 @@ function _getStarterBundle() {
   }, null, 2);
 }
 import { preloadIcons } from './icon-loader.js';
+import { createFocusTrap } from './focus-trap.js';
 import { setData, getData, registerRerenderFn, registerGetActiveCardTypeFn } from './state.js';
 import { createVirtualGrid, VS_THRESHOLD } from './virtual-scroll.js';
 import { getQuery, initDeckBar, updateDeckBar } from './deck-filter.js';
@@ -192,7 +193,7 @@ export async function renderCards(cardType, rows, filteredIndices) {
       const lines = cardType.fields
         .filter(f => row[f.key] && String(row[f.key]).trim())
         .slice(0, 6)
-        .map(f => `<div class="overlay-field"><span class="overlay-label">${f.label}</span><span class="overlay-value">${String(row[f.key]).slice(0, 40)}</span></div>`)
+        .map(f => `<div class="overlay-field"><span class="overlay-label">${escapeHtml(f.label)}</span><span class="overlay-value">${escapeHtml(String(row[f.key]).slice(0, 40))}</span></div>`)
         .join('');
       overlay.innerHTML = lines;
       frontWrapper.appendChild(overlay);
@@ -233,31 +234,6 @@ export async function renderCards(cardType, rows, filteredIndices) {
   }
 
   if (displayIndices.length === 0 && !getData()) renderEmpty();
-}
-
-/**
- * Append the "Add card" button at the end of the card grid.
- */
-function _appendAddCardBtn(cardType, liveData, width, height) {
-  const addPair = document.createElement('div');
-  addPair.className = 'card-pair card-pair-add';
-  addPair.setAttribute('role', 'listitem');
-
-  const addBtn = document.createElement('button');
-  addBtn.className = 'card-add-btn';
-  addBtn.style.width = width;
-  addBtn.style.height = height;
-  addBtn.setAttribute('aria-label', 'Add new card');
-  addBtn.innerHTML = '<span class="card-add-icon">+</span><span class="card-add-label">Add card</span>';
-  addBtn.addEventListener('click', () => {
-    const emptyRow = {};
-    for (const f of cardType.fields) emptyRow[f.key] = '';
-    liveData.push(emptyRow);
-    setData(liveData);
-    openEditModal(liveData.length - 1, addBtn);
-  });
-  addPair.appendChild(addBtn);
-  cardGrid.appendChild(addPair);
 }
 
 /**
@@ -382,7 +358,9 @@ function applyBulkEdit() {
     const setRadio = wrap.querySelector('input[type=radio][value=set]');
     if (!setRadio?.checked) return;
     const chosen = [...wrap.querySelectorAll('input[type=checkbox]:checked')].map(c => c.value);
-    if (chosen.length > 0) updates[wrap.dataset.fieldKey] = chosen.join('; ');
+    const fieldDef = ct.fields.find(f => f.key === wrap.dataset.fieldKey);
+    const sep = fieldDef?.separator || '|';
+    if (chosen.length > 0) updates[wrap.dataset.fieldKey] = chosen.join(sep);
   });
 
   if (Object.keys(updates).length === 0) {
@@ -558,7 +536,7 @@ export function bindEvents() {
       indices.forEach(i => selectedCards.add(i));
       _updateCardSelectionBar();
       // Update checkboxes in DOM
-      cardGrid.querySelectorAll('.card-pair').forEach((pair, j) => {
+      cardGrid.querySelectorAll('.card-pair').forEach((pair) => {
         const cb = pair.querySelector('.card-select-cb');
         if (cb) { cb.checked = true; pair.classList.add('selected'); }
       });
@@ -768,11 +746,6 @@ export function bindEvents() {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function updateCardSearchVisibility() {
-  const bar = document.querySelector('.card-search-bar');
-  if (bar) bar.hidden = activeView !== 'cards';
-}
-
 function showShortcutsModal() {
   const existing = document.getElementById('shortcuts-modal');
   if (existing) { existing.remove(); return; }
@@ -802,12 +775,21 @@ function showShortcutsModal() {
       </tbody></table>
     </div>`;
   document.body.appendChild(modal);
-  modal.querySelector('#shortcuts-close').addEventListener('click', () => modal.remove());
-  modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+
+  const panel = modal.querySelector('.shortcuts-panel');
+  const trap = createFocusTrap(panel);
+  trap.activate();
+
+  function closeShortcutsModal() {
+    trap.deactivate();
+    modal.remove();
+  }
+
+  modal.querySelector('#shortcuts-close').addEventListener('click', closeShortcutsModal);
+  modal.addEventListener('click', (e) => { if (e.target === modal) closeShortcutsModal(); });
   document.addEventListener('keydown', function h(e) {
-    if (e.key === 'Escape') { modal.remove(); document.removeEventListener('keydown', h); }
+    if (e.key === 'Escape') { closeShortcutsModal(); document.removeEventListener('keydown', h); }
   });
-  modal.querySelector('#shortcuts-close').focus();
 }
 
 // ── REQ-064: Deck import / export ─────────────────────────────────────────────
@@ -869,7 +851,7 @@ export async function importDeck(file) {
 
     // Use the registry's internal register via registerFromUpload equivalent
     // We rebuild File objects so the registry path is used consistently
-    const schemaObj = { id: ct.id, name: ct.name, description: ct.description, cardSize: ct.cardSize, fields: ct.fields, colorMapping: ct.colorMapping };
+    const schemaObj = { id: ct.id, name: ct.name, description: ct.description, cardSize: ct.cardSize, fields: ct.fields, colorMapping: ct.colorMapping, aggregations: ct.aggregations };
     await registry.registerFromUpload(
       new File([JSON.stringify(schemaObj)], 'card-type.json'),
       new File([ct.frontTemplate], 'front.html'),
@@ -905,14 +887,13 @@ async function exportCardsPng() {
   const data = getData() || ct?.sampleData;
   if (!ct || !data) { showToast('No cards to export.', 'error'); return; }
 
-  // Dynamically import heavy libraries at call time (not statically analysed by Vite).
-  // eslint-disable-next-line no-new-func
-  const lazyImport = new Function('m', 'return import(m)');
+  // Dynamically import heavy libraries at call time.
+  // @vite-ignore suppresses Vite's static analysis warning without breaking CSP.
   let htmlToImage, JSZip;
   try {
     [{ default: htmlToImage }, { default: JSZip }] = await Promise.all([
-      lazyImport('html-to-image'),
-      lazyImport('jszip'),
+      import(/* @vite-ignore */ 'html-to-image'),
+      import(/* @vite-ignore */ 'jszip'),
     ]);
   } catch {
     showToast('PNG export requires html-to-image and jszip. Run: npm install html-to-image jszip', 'error', 8000);

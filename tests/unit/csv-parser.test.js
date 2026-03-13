@@ -97,6 +97,21 @@ describe('generateCsv', () => {
     const csv = generateCsv(fields, rows);
     expect(csv).toBe('name,color\nFern,');
   });
+
+  it('round-trips values with all special characters', async () => {
+    const rows = [{ name: 'hello, "world"\nnewline', color: 'green' }];
+    const csv = generateCsv(fields, rows);
+    const { data } = await parseCsv(csv);
+    expect(data).toHaveLength(1);
+    expect(data[0].name).toBe('hello, "world"\nnewline');
+    expect(data[0].color).toBe('green');
+  });
+
+  it('handles null and undefined values', () => {
+    const rows = [{ name: null, color: undefined }];
+    const csv = generateCsv(fields, rows);
+    expect(csv).toBe('name,color\n,');
+  });
 });
 
 // ── remapHeaders ──────────────────────────────────────────────────────────────

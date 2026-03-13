@@ -26,6 +26,7 @@ export function buildPrintLayout(cardType, rows, onProgress) {
   if (_cancelPrint) { _cancelPrint(); _cancelPrint = null; }
 
   const printArea = document.getElementById('print-area');
+  if (!printArea) return;
   printArea.innerHTML = '';
 
   const pageGroups = [];
@@ -128,7 +129,7 @@ function renderPageGroup(printArea, cardType, chunk) {
  * Create a progress bar element for print generation feedback.
  * @param {number} totalPages
  */
-function _createProgressBar(_totalPages) {
+function _createProgressBar() {
   const el = document.createElement('div');
   el.className = 'print-progress';
   el.setAttribute('role', 'progressbar');

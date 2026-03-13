@@ -10,6 +10,7 @@
 import * as registry from './card-type-registry.js';
 import { setData, getData, getActiveCardType, rerenderActiveView } from './state.js';
 import { showToast } from './toast.js';
+import { escapeHtml } from './template-renderer.js';
 import { getFileHandle, getFileName, setFileHandle, showFilename, updateSaveState, loadCsvFile } from './file-io.js';
 
 const DB_NAME = 'card-maker-db';
@@ -167,7 +168,7 @@ async function _tryReconnectFile(session) {
   const handle = session.fileHandle;
   if (!handle || typeof handle.queryPermission !== 'function') return false;
   try {
-    let perm = await handle.queryPermission({ mode: 'readwrite' });
+    const perm = await handle.queryPermission({ mode: 'readwrite' });
     if (perm === 'prompt') {
       // Don't auto-prompt — let the banner button do it
       return false;
@@ -198,9 +199,9 @@ function _showResumeBanner(session, fileReconnected, ageStr) {
   banner.className = 'resume-banner';
   banner.setAttribute('role', 'status');
 
-  const ctName = session.cardTypeName || 'Custom';
+  const ctName = escapeHtml(session.cardTypeName || 'Custom');
   const cards = session.data?.length ?? 0;
-  const fileName = session.fileName;
+  const fileName = session.fileName ? escapeHtml(session.fileName) : null;
 
   let fileStatus = '';
   if (fileName && fileReconnected) {
@@ -211,7 +212,7 @@ function _showResumeBanner(session, fileReconnected, ageStr) {
 
   banner.innerHTML = `
     <span class="resume-info">
-      <strong>Session restored</strong> — ${cards} ${ctName} cards from ${ageStr}
+      <strong>Session restored</strong> — ${cards} ${ctName} cards from ${escapeHtml(ageStr)}
     </span>
     ${fileStatus}
     <button id="resume-dismiss" class="resume-dismiss" aria-label="Dismiss">✕</button>`;

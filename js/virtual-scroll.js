@@ -14,12 +14,14 @@
  *     card's CSS pixel width, so it matches the flex layout exactly.
  */
 
+import { escapeHtml } from './template-renderer.js';
+
 export const VS_THRESHOLD = 60;
 
 const OVERSCAN_ROWS = 2; // extra rows above/below to pre-render
 
 function cssToPixels(val) {
-  if (!val) return 89;
+  if (!val) return 89; // ~88.9mm standard card height at 96 CSS-px-per-inch
   const n = parseFloat(val);
   const unit = val.replace(/[0-9.]/g, '').trim();
   switch (unit) {
@@ -40,7 +42,6 @@ export function createVirtualGrid(container, opts) {
   const cardPxH = cssToPixels(cardH);
   // Matches --card-gap in CSS (12px)
   const GAP = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--card-gap') || '12');
-  const PAIR_W = cardPxW + GAP; // width of one card-pair slot
   const ROW_H = cardPxH + GAP;
 
   let rows = opts.rows || [];
@@ -100,7 +101,7 @@ export function createVirtualGrid(container, opts) {
       const lines = cardType.fields
         .filter(f => row[f.key] && String(row[f.key]).trim())
         .slice(0, 6)
-        .map(f => `<div class="overlay-field"><span class="overlay-label">${f.label}</span><span class="overlay-value">${String(row[f.key]).slice(0, 40)}</span></div>`)
+        .map(f => `<div class="overlay-field"><span class="overlay-label">${escapeHtml(f.label)}</span><span class="overlay-value">${escapeHtml(String(row[f.key]).slice(0, 40))}</span></div>`)
         .join('');
       overlay.innerHTML = lines;
       front.appendChild(overlay);

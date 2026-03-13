@@ -110,6 +110,7 @@ export function openEditModal(rowIndex, triggerEl) {
       verifyCheckbox.dataset.verifyKey = field.key;
       verifyCheckbox.checked = verifiedSet.has(field.key);
       verifyCheckbox.title = 'Mark as verified';
+      verifyCheckbox.setAttribute('aria-label', `Mark ${field.label || field.key} as verified`);
       verifyCheckbox.addEventListener('change', () => {
         wrapper.classList.toggle('verified', verifyCheckbox.checked);
       });
@@ -218,7 +219,6 @@ function saveCurrentEdit() {
   const data = getData() || cardType.sampleData;
   const oldRow = data ? { ...data[currentEditIndex] } : null;
 
-  if (data) data[currentEditIndex] = newRow;
   setRowData(currentEditIndex, newRow);
 
   // Push undo command (REQ-055)
@@ -261,6 +261,7 @@ function duplicateCurrentCard() {
 
 /**
  * Navigate to prev/next card in the modal.
+ * Saves the current card before navigating to avoid losing edits.
  */
 function navigateEdit(direction) {
   const cardType = getActiveCardType();
@@ -268,6 +269,7 @@ function navigateEdit(direction) {
   if (!data) return;
   const newIndex = currentEditIndex + direction;
   if (newIndex >= 0 && newIndex < data.length) {
+    saveCurrentEdit();
     openEditModal(newIndex);
   }
 }

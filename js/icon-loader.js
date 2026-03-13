@@ -78,8 +78,8 @@ export async function fetchIcon(nameOrUrl, options = {}) {
 }
 
 function enqueue(url, key) {
-  return new Promise((resolve, reject) => {
-    queue.push({ url, key, resolve, reject });
+  return new Promise((resolve) => {
+    queue.push({ url, key, resolve });
     drain();
   });
 }
@@ -95,7 +95,7 @@ function drain() {
   }
 }
 
-async function doFetch({ url, key, resolve, reject }) {
+async function doFetch({ url, key, resolve }) {
   try {
     const res = await fetch(url);
     if (!res.ok) {
@@ -128,7 +128,7 @@ async function doFetch({ url, key, resolve, reject }) {
     svgCache.set(key, svg);
     pendingFetches.delete(key);
     resolve(svg);
-  } catch (err) {
+  } catch {
     const fallback = makeFallbackSvg(key);
     svgCache.set(key, fallback);
     pendingFetches.delete(key);

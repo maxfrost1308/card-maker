@@ -72,11 +72,18 @@ export async function loadCsvFile(file, displayName) {
   const ct = getActiveCardType();
   if (!ct) { showToast('Please select a card type first.', 'error'); return; }
 
+  // Guard against extremely large files (> 20 MB)
+  const MAX_FILE_SIZE = 20 * 1024 * 1024;
+  if (file.size > MAX_FILE_SIZE) {
+    showToast(`File is too large (${Math.round(file.size / 1024 / 1024)}MB). Max: 20MB.`, 'error');
+    return;
+  }
+
   const { data: rawData, errors } = await parseCsv(file);
   if (errors.length > 0) showToast(`CSV warnings: ${errors[0]}`, 'error');
   if (rawData.length === 0) { showToast('CSV is empty or could not be parsed.', 'error'); return; }
 
-  let data = remapHeaders(rawData, ct.fields);
+  const data = remapHeaders(rawData, ct.fields);
 
   // Warn when no CSV columns match schema fields (REQ-056)
   const schemaKeys = new Set(ct.fields.map(f => f.key));
