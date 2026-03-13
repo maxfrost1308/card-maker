@@ -1,12 +1,16 @@
 /**
  * Edit View module — modal for editing individual card data.
  */
-import { getData, setRowData, getActiveCardType, rerenderActiveView } from './ui.js';
-import { showToast } from './ui.js';
+import { getData, setRowData, getActiveCardType, rerenderActiveView } from './state.js';
+import { showToast } from './toast.js';
 import { createPillPicker, createTagPicker } from './table-view.js';
+import { createFocusTrap } from './focus-trap.js';
+import { pushUndo } from './undo-stack.js';
 
 let currentEditIndex = null;
 let initialized = false;
+let _focusTrap = null;
+let _lastTrigger = null; // element that opened the modal (for focus return)
 
 /**
  * Initialize edit view event listeners (call once from bindEvents).
@@ -28,6 +32,10 @@ export function initEditView() {
   prevBtn.addEventListener('click', () => navigateEdit(-1));
   nextBtn.addEventListener('click', () => navigateEdit(1));
 
+  // REQ-061: Duplicate current card
+  const duplicateBtn = document.getElementById('edit-duplicate');
+  duplicateBtn?.addEventListener('click', duplicateCurrentCard);
+
   // Click backdrop to close
   modal.addEventListener('click', (e) => {
     if (e.target === modal) closeEditModal();
@@ -43,8 +51,11 @@ export function initEditView() {
 
 /**
  * Open the edit modal for a given row index.
+ * @param {number} rowIndex
+ * @param {HTMLElement} [triggerEl] - Element to return focus to when modal closes
  */
-export function openEditModal(rowIndex) {
+export function openEditModal(rowIndex, triggerEl) {
+  _lastTrigger = triggerEl || document.activeElement || null;
   const cardType = getActiveCardType();
   const data = getData() || cardType?.sampleData;
   if (!data || !cardType || rowIndex < 0 || rowIndex >= data.length) return;
@@ -110,12 +121,9 @@ export function openEditModal(rowIndex) {
     const value = row[field.key] || '';
 
     if (field.type === 'select' && field.options) {
-      // Use pill picker for single-select (click to choose)
-      const picker = createPillPicker(
-        { ...field, type: 'multi-select' },
-        value ? [value] : [],
-        () => {}
-      );
+      // Use pill picker for single-select; enforce single-select mode
+      const picker = createPillPicker(field, value ? [value] : [], () => {});
+      picker._singleSelect = true;
       picker.dataset.fieldKey = field.key;
       picker.dataset.selectType = 'single';
       wrapper.appendChild(picker);
@@ -148,9 +156,11 @@ export function openEditModal(rowIndex) {
 
   modal.hidden = false;
 
-  // Focus first input
-  const firstInput = body.querySelector('input, select');
-  if (firstInput) firstInput.focus();
+  // Activate focus trap (REQ-041): keeps Tab navigation inside the modal
+  const panel = modal.querySelector('.edit-modal-panel');
+  if (_focusTrap) _focusTrap.deactivate();
+  _focusTrap = createFocusTrap(panel, { returnFocus: _lastTrigger });
+  _focusTrap.activate();
 }
 
 /**
@@ -206,11 +216,47 @@ function saveCurrentEdit() {
   newRow.verified_fields = verifiedKeys.join('|');
 
   const data = getData() || cardType.sampleData;
+  const oldRow = data ? { ...data[currentEditIndex] } : null;
+
   if (data) data[currentEditIndex] = newRow;
   setRowData(currentEditIndex, newRow);
+
+  // Push undo command (REQ-055)
+  if (oldRow !== null) {
+    const idx = currentEditIndex;
+    pushUndo({
+      undo: () => { setRowData(idx, oldRow); rerenderActiveView(); },
+      redo: () => { setRowData(idx, newRow); rerenderActiveView(); },
+    });
+  }
+
   rerenderActiveView();
   closeEditModal();
   showToast('Card updated.', 'success');
+}
+
+/**
+ * Duplicate the current card and open the edit modal for the copy (REQ-061).
+ */
+function duplicateCurrentCard() {
+  const cardType = getActiveCardType();
+  const data = getData();
+  if (!cardType || currentEditIndex === null || !data) return;
+
+  const copy = { ...data[currentEditIndex] };
+  data.push(copy);
+  setRowData(data.length - 1, copy);
+
+  pushUndo({
+    undo: () => { data.splice(data.length - 1, 1); rerenderActiveView(); },
+    redo: () => { data.push({ ...copy }); rerenderActiveView(); },
+  });
+
+  closeEditModal();
+  rerenderActiveView();
+  // Open the new duplicate for immediate editing
+  setTimeout(() => openEditModal(data.length - 1), 50);
+  showToast('Card duplicated.', 'success');
 }
 
 /**
@@ -227,11 +273,16 @@ function navigateEdit(direction) {
 }
 
 /**
- * Close the edit modal.
+ * Close the edit modal and restore focus.
  */
 function closeEditModal() {
   const modal = document.getElementById('edit-modal');
   modal.hidden = true;
   document.getElementById('edit-modal-body').innerHTML = '';
   currentEditIndex = null;
+  // Deactivate focus trap and return focus to the trigger element
+  if (_focusTrap) {
+    _focusTrap.deactivate();
+    _focusTrap = null;
+  }
 }

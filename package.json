@@ -1,0 +1,46 @@
+{
+  "name": "card-maker",
+  "version": "1.4.0",
+  "description": "Design, edit, and print custom cards from CSV data",
+  "license": "MIT",
+  "type": "module",
+  "keywords": [
+    "cards",
+    "csv",
+    "print",
+    "tabletop",
+    "game",
+    "maker"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/maxfrost1308/card-maker.git"
+  },
+  "scripts": {
+    "dev": "vite",
+    "start": "vite",
+    "preview": "vite preview",
+    "build": "vite build",
+    "lint": "eslint js/",
+    "format": "prettier --write js/ css/ *.html",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "papaparse": "^5.4.1"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^2.1.0",
+    "eslint": "^9.0.0",
+    "globals": "^15.0.0",
+    "jsdom": "^25.0.0",
+    "prettier": "^3.0.0",
+    "vite": "^5.0.0",
+    "vitest": "^2.1.0"
+  },
+  "homepage": "https://maxfrost1308.github.io/card-maker/"
+}

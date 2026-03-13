@@ -3,6 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- PWA (REQ-046) -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#4a6fa5">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <!-- Content Security Policy (REQ-082) -->
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self';
+    script-src 'self';
+    style-src 'self' 'unsafe-inline';
+    img-src 'self' https://game-icons.net data: blob:;
+    connect-src 'self' https://game-icons.net;
+  ">
   <title>Card Maker</title>
   <link rel="stylesheet" href="css/app.css">
   <link rel="stylesheet" href="css/table-view.css">
@@ -10,6 +22,8 @@
   <link rel="stylesheet" href="css/print.css">
 </head>
 <body>
+  <!-- Skip navigation link (REQ-044): visually hidden, revealed on focus -->
+  <a href="#card-grid" class="skip-link">Skip to main content</a>
   <header class="app-header">
     <div class="header-left">
       <button id="sidebar-toggle" class="btn sidebar-toggle" aria-label="Toggle sidebar">&#9776;</button>
@@ -20,18 +34,32 @@
         <button class="btn view-btn active" data-view="cards">Cards</button>
         <button class="btn view-btn" data-view="table">Table</button>
       </div>
+      <button id="overlay-toggle-btn" class="btn" title="Toggle field overlay on cards" aria-pressed="false">⊕ Overlay</button>
+      <button id="add-card-btn" class="btn btn-primary" hidden title="Add a new card (requires data loaded)">+ Add Card</button>
       <label class="toggle-label">
         <input type="checkbox" id="show-backs" checked>
         Show backs
       </label>
       <button id="save-btn" class="btn btn-save" disabled title="Save CSV back to file (Ctrl+S)">Save</button>
+      <div class="header-menu-wrap">
+        <button class="btn" id="export-menu-btn" title="Export options" aria-haspopup="true" aria-expanded="false">Export ▾</button>
+        <div class="header-menu" id="export-menu" hidden role="menu">
+          <button class="header-menu-item" id="export-deck-btn" role="menuitem">⬇ Export deck (.cardmaker)</button>
+          <label class="header-menu-item" role="menuitem">
+            ⬆ Import deck…
+            <input type="file" id="import-deck-input" accept=".cardmaker,.json" style="display:none">
+          </label>
+          <button class="header-menu-item" id="export-png-btn" role="menuitem">🖼 Export cards as PNG…</button>
+        </div>
+      </div>
       <button id="print-btn" class="btn btn-primary">Print / PDF</button>
+      <button id="dark-mode-toggle" class="btn" title="Toggle dark mode" aria-label="Toggle dark mode">🌙</button>
     </div>
   </header>
 
   <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
   <div class="app-layout">
-    <aside class="sidebar" id="sidebar">
+    <aside class="sidebar" id="sidebar" role="complementary" aria-label="Card settings and controls">
       <section class="sidebar-section">
         <h2>Card Type</h2>
         <select id="card-type-select">
@@ -56,34 +84,37 @@
       </section>
 
       <section class="sidebar-section">
-        <h2>Upload Custom Card Type</h2>
+        <h2>Custom Card Type</h2>
         <div class="custom-upload-group">
-          <label>
-            Schema (JSON)
-            <a href="#" class="starter-link" data-starter="schema">download starter</a>
-            <input type="file" id="custom-schema" accept=".json">
+          <p class="custom-upload-hint">A single JSON file containing your schema, templates, and styles. <a href="#" class="starter-link" data-starter="bundle">Download starter</a></p>
+          <label class="custom-file-label" id="custom-file-label">
+            <input type="file" id="custom-bundle" accept=".json">
+            <span id="custom-file-name">No file chosen</span>
           </label>
-          <label>
-            Front Template (HTML)
-            <a href="#" class="starter-link" data-starter="front">download starter</a>
-            <input type="file" id="custom-front" accept=".html,.htm">
-          </label>
-          <label>
-            Back Template (HTML)
-            <a href="#" class="starter-link" data-starter="back">download starter</a>
-            <input type="file" id="custom-back" accept=".html,.htm">
-          </label>
-          <label>
-            Styles (CSS)
-            <a href="#" class="starter-link" data-starter="css">download starter</a>
-            <input type="file" id="custom-css" accept=".css">
-          </label>
-          <button id="custom-upload-btn" class="btn">Register Card Type</button>
+          <div class="custom-upload-actions">
+            <button id="custom-upload-btn" class="btn btn-primary">Load Card Type</button>
+            <button id="custom-download-btn" class="btn" title="Download current card type as a bundle JSON">⬇ Download current</button>
+          </div>
         </div>
       </section>
     </aside>
 
-    <main class="main-area">
+    <main class="main-area" id="main-content">
+      <div id="deck-bar" class="deck-bar" hidden>
+        <span id="deck-summary" class="deck-summary"></span>
+        <div id="shared-filter-bar" class="shared-filter-bar">
+          <input id="shared-search" type="search" class="shared-search-input" placeholder="Search cards…" aria-label="Search cards">
+          <span id="shared-filter-tokens" class="shared-filter-tokens"></span>
+          <button id="shared-clear-filters" class="btn btn-sm" hidden>Clear filters</button>
+        </div>
+        <div id="card-selection-bar" class="card-selection-bar" hidden>
+          <span id="card-selected-count" class="card-selected-count">0 selected</span>
+          <button id="bulk-edit-btn" class="btn btn-sm btn-primary" disabled>✎ Bulk Edit</button>
+          <button id="select-all-cards-btn" class="btn btn-sm">Select all</button>
+          <button id="clear-selection-btn" class="btn btn-sm">Clear</button>
+        </div>
+        <button id="select-mode-btn" class="btn btn-sm" title="Select cards for bulk editing">☑ Select</button>
+      </div>
       <div id="card-grid" class="card-grid">
         <div class="empty-state">
           <p>Select a card type and upload a CSV to get started.</p>
@@ -94,23 +125,44 @@
     </main>
   </div>
 
-  <div id="toast" class="toast" hidden></div>
+  <div id="toast" class="toast" hidden role="status" aria-live="polite" aria-atomic="true"></div>
 
   <div id="print-area" class="print-area"></div>
 
-  <!-- Edit Modal -->
-  <div id="edit-modal" class="edit-modal" hidden>
+  <!-- Edit Modal (REQ-040: role=dialog, aria-modal, aria-labelledby) -->
+  <div id="edit-modal" class="edit-modal" hidden
+       role="dialog" aria-modal="true" aria-labelledby="edit-title">
     <div class="edit-modal-panel">
       <div class="edit-modal-header">
-        <button class="btn edit-nav-btn" id="edit-prev" title="Previous card">&larr;</button>
+        <button class="btn edit-nav-btn" id="edit-prev" title="Previous card" aria-label="Previous card">&larr;</button>
         <h2 id="edit-title">Edit Card</h2>
-        <button class="btn edit-nav-btn" id="edit-next" title="Next card">&rarr;</button>
-        <button class="btn edit-close-btn" id="edit-close">&times;</button>
+        <button class="btn edit-nav-btn" id="edit-next" title="Next card" aria-label="Next card">&rarr;</button>
+        <button class="btn edit-close-btn" id="edit-close" aria-label="Close editor">&times;</button>
       </div>
       <div class="edit-modal-body" id="edit-modal-body"></div>
       <div class="edit-modal-footer">
+        <button class="btn" id="edit-duplicate" title="Duplicate this card">Duplicate</button>
         <button class="btn" id="edit-cancel">Cancel</button>
         <button class="btn btn-primary" id="edit-save">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bulk Edit Modal -->
+  <div id="bulk-edit-modal" class="edit-modal" hidden
+       role="dialog" aria-modal="true" aria-labelledby="bulk-edit-title">
+    <div class="edit-modal-panel">
+      <div class="edit-modal-header">
+        <h2 id="bulk-edit-title">Bulk Edit</h2>
+        <button class="btn edit-close-btn" id="bulk-edit-close" aria-label="Close">&times;</button>
+      </div>
+      <div class="edit-modal-body" id="bulk-edit-body">
+        <p class="bulk-edit-desc">Choose a field and a value to apply to all selected cards. Only filled-in fields will be updated.</p>
+        <div id="bulk-edit-fields"></div>
+      </div>
+      <div class="edit-modal-footer">
+        <button class="btn" id="bulk-edit-cancel">Cancel</button>
+        <button class="btn btn-primary" id="bulk-edit-save">Apply to selected</button>
       </div>
     </div>
   </div>

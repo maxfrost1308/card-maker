@@ -1,6 +1,62 @@
+/* ===== Dark Mode (REQ-054) ===== */
+html.dark {
+  color-scheme: dark;
+  --bg: #1a1a2e;
+  --surface: #16213e;
+  --border: #2a2a4a;
+  --text: #e8e8f0;
+  --text-muted: #9090b0;
+  --accent: #6a9fd8;
+  --accent-hover: #5a8fc8;
+  --radius: 6px;
+  --card-gap: 12px;
+}
+
+/* Keep card rendering area white — cards are designed for print */
+html.dark .card-wrapper {
+  filter: none;
+}
+
+html.dark .card-add-btn {
+  color: var(--text-muted);
+  border-color: var(--border);
+}
+
+html.dark .empty-state-icon svg rect[fill="#e8eef7"] { fill: #2a2a4a; }
+html.dark .empty-state-icon svg rect[fill="#f5f8ff"] { fill: #1e2d4e; }
+
+html.dark kbd {
+  background: #2a2a4a;
+  border-color: #444;
+  color: var(--text);
+}
+
+/* Prefer-scheme detection handled in JS (bindEvents) to avoid conflicting with manual toggle */
+
 /* ===== Reset & Base ===== */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 [hidden] { display: none !important; }
+
+/* ===== Skip Navigation (REQ-044) ===== */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 8px;
+  background: var(--accent, #4a6fa5);
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 0 0 var(--radius, 6px) var(--radius, 6px);
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  z-index: 9999;
+  transition: top 0.1s;
+}
+.skip-link:focus {
+  top: 0;
+  outline: 3px solid #fff;
+  outline-offset: 2px;
+}
 
 :root {
   --sidebar-width: 280px;
@@ -8,7 +64,7 @@
   --surface: #fff;
   --border: #ddd;
   --text: #333;
-  --text-muted: #777;
+  --text-muted: #666; /* was #777; darkened to meet WCAG AA 4.5:1 on light backgrounds */
   --accent: #4a6fa5;
   --accent-hover: #3a5a8a;
   --radius: 6px;
@@ -234,7 +290,8 @@ html { font-family: system-ui, -apple-system, sans-serif; color: var(--text); ba
   z-index: 5;
 }
 
-.card-pair:hover .card-edit-btn {
+.card-wrapper:hover .card-edit-btn,
+.card-wrapper .card-edit-btn:focus-visible {
   opacity: 1;
 }
 
@@ -254,6 +311,510 @@ html { font-family: system-ui, -apple-system, sans-serif; color: var(--text); ba
 
 .starter-link:hover {
   text-decoration: underline;
+}
+
+/* ===== Loading Indicator (REQ-051) ===== */
+.loading-indicator {
+  width: 100%;
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.loading-indicator::before {
+  content: '';
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  vertical-align: middle;
+  margin-right: 8px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ===== Improved Empty State (REQ-052) ===== */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-muted);
+  width: 100%;
+}
+
+.empty-state-icon { margin-bottom: 16px; opacity: 0.7; }
+.empty-state-title { font-size: 1.2rem; font-weight: 600; color: var(--text); margin-bottom: 8px; }
+.empty-state-desc { font-size: 0.9rem; margin-bottom: 16px; }
+.empty-state-try-btn { margin-bottom: 16px; }
+.empty-state-hint { font-size: 0.8rem; color: var(--text-muted); }
+
+/* ===== Add New Card Button (REQ-060) ===== */
+.card-add-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  background: transparent;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+  font-size: 0.85rem;
+}
+
+.card-add-btn:hover, .card-add-btn:focus {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(74, 111, 165, 0.05);
+  outline: none;
+}
+
+.card-add-icon {
+  font-size: 2rem;
+  line-height: 1;
+  font-weight: 300;
+}
+
+.card-add-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ===== Card Search Bar (REQ-065) ===== */
+.card-search-bar {
+  margin-bottom: 12px;
+}
+
+.card-search-input {
+  width: 100%;
+  max-width: 320px;
+  padding: 7px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 0.85rem;
+  background: var(--surface);
+}
+
+.card-search-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(74, 111, 165, 0.15);
+}
+
+/* ===== Drag-and-drop overlay (REQ-050) ===== */
+.main-area.drag-over::after {
+  content: 'Drop CSV here';
+  position: absolute;
+  inset: 0;
+  background: rgba(74, 111, 165, 0.12);
+  border: 3px dashed var(--accent);
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--accent);
+  z-index: 50;
+  pointer-events: none;
+}
+
+.main-area { position: relative; }
+
+/* ===== Session Resume Banner ===== */
+.resume-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  background: #e8f4fd;
+  border-bottom: 1px solid #b3d9f7;
+  font-size: 0.85rem;
+  flex-wrap: wrap;
+}
+
+html.dark .resume-banner {
+  background: #1a2e3d;
+  border-color: #2a4a60;
+}
+
+.resume-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.resume-file {
+  white-space: nowrap;
+}
+
+.resume-file-ok {
+  color: #27ae60;
+  font-weight: 500;
+}
+
+.resume-reconnect {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  white-space: nowrap;
+}
+
+.resume-reconnect:hover {
+  background: var(--accent-hover);
+}
+
+.resume-dismiss {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 1rem;
+  padding: 2px 6px;
+  border-radius: 3px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.resume-dismiss:hover { background: var(--bg); }
+
+/* ===== Deck Bar (shared filter + summary) ===== */
+.deck-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border, #e0e0e0);
+  flex-wrap: wrap;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.deck-summary {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.shared-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 200px;
+}
+
+.shared-search-input {
+  flex: 1;
+  max-width: 320px;
+  padding: 5px 10px;
+  border: 1px solid var(--border, #ddd);
+  border-radius: var(--radius);
+  font-size: 0.85rem;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.shared-search-input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.shared-filter-tokens {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+/* ===== Print Progress (REQ-072) ===== */
+.print-progress {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--surface);
+  border: 1px solid var(--border, #ddd);
+  border-radius: var(--radius);
+  padding: 12px 20px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  min-width: 280px;
+  z-index: 500;
+}
+
+.print-progress-label {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.print-progress-bar {
+  height: 6px;
+  background: var(--bg);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.print-progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 3px;
+  transition: width 0.2s ease;
+}
+
+/* ===== Card Overlay ===== */
+.card-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.72);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  overflow: hidden;
+  border-radius: var(--radius);
+  pointer-events: none;
+}
+
+.overlay-field {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.overlay-label {
+  font-size: 0.6rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  opacity: 0.7;
+  letter-spacing: 0.04em;
+}
+
+.overlay-value {
+  font-size: 0.75rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ===== Card Selection ===== */
+.card-select-cb {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  z-index: 10;
+  accent-color: var(--accent);
+}
+
+.card-grid.select-mode .card-pair {
+  cursor: pointer;
+}
+
+.card-pair.selected .card-wrapper {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.card-selection-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.card-selected-count {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+
+/* ===== Custom Card Type Upload ===== */
+.custom-upload-hint {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+
+.custom-file-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px dashed var(--border, #ccc);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  margin-bottom: 8px;
+}
+
+.custom-file-label input[type="file"] {
+  width: 0;
+  opacity: 0;
+  position: absolute;
+}
+
+.custom-file-label:hover {
+  border-color: var(--accent);
+  background: var(--bg);
+}
+
+#custom-file-name {
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.custom-upload-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ===== Bulk Edit ===== */
+.bulk-edit-desc {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+.bulk-ms-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.85rem;
+}
+
+.bulk-ms-none { cursor: pointer; }
+
+/* Edit button: hidden by default, revealed on card hover */
+.card-edit-btn {
+  opacity: 0;
+}
+
+/* ===== Virtual Scroll (REQ-071) ===== */
+.card-grid {
+  position: relative;
+}
+
+.vs-spacer {
+  position: relative;
+  pointer-events: none;
+}
+
+.vs-window {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--card-gap);
+  justify-content: center;
+}
+
+/* ===== Header Export Menu (REQ-064) ===== */
+.header-menu-wrap {
+  position: relative;
+}
+
+.header-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  min-width: 220px;
+  z-index: 200;
+  overflow: hidden;
+}
+
+.header-menu-item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 10px 16px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.85rem;
+  text-align: left;
+  color: var(--text);
+  gap: 8px;
+}
+
+.header-menu-item:hover {
+  background: var(--bg);
+}
+
+/* ===== Keyboard Shortcuts Modal (REQ-053) ===== */
+.shortcuts-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.shortcuts-panel {
+  background: var(--surface);
+  border-radius: var(--radius);
+  width: 400px;
+  max-width: 90vw;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+}
+
+.shortcuts-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.shortcuts-header h2 { font-size: 1rem; font-weight: 600; }
+
+.shortcuts-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.shortcuts-table td {
+  padding: 8px 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.shortcuts-table tr:last-child td { border-bottom: none; }
+
+kbd {
+  display: inline-block;
+  padding: 2px 6px;
+  background: #f0f0f0;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  font-family: monospace;
+  font-size: 0.8em;
 }
 
 /* ===== Sidebar Overlay Backdrop (mobile) ===== */
