@@ -30,13 +30,42 @@ export function closeSidebar() {
 export function refreshCardTypeList() {
   const select = el('card-type-select');
   if (!select) return;
+  const currentVal = select.value;
   const types = registry.listAll();
+
+  // Remove everything after the first placeholder option
   while (select.options.length > 1) select.remove(1);
-  for (const t of types) {
-    const opt = document.createElement('option');
-    opt.value = t.id;
-    opt.textContent = t.name;
-    select.appendChild(opt);
+  // Remove old optgroups
+  select.querySelectorAll('optgroup').forEach(g => g.remove());
+
+  const builtIns = types.filter(t => t.builtIn);
+  const customs = types.filter(t => !t.builtIn);
+
+  if (builtIns.length > 0) {
+    const group = document.createElement('optgroup');
+    group.label = 'Built-in';
+    for (const t of builtIns) {
+      const opt = document.createElement('option');
+      opt.value = t.id; opt.textContent = t.name;
+      group.appendChild(opt);
+    }
+    select.appendChild(group);
+  }
+
+  if (customs.length > 0) {
+    const group = document.createElement('optgroup');
+    group.label = 'Custom';
+    for (const t of customs) {
+      const opt = document.createElement('option');
+      opt.value = t.id; opt.textContent = t.name;
+      group.appendChild(opt);
+    }
+    select.appendChild(group);
+  }
+
+  // Restore selection if still valid
+  if (currentVal && select.querySelector(`option[value="${currentVal}"]`)) {
+    select.value = currentVal;
   }
 }
 

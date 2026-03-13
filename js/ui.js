@@ -661,7 +661,7 @@ export function bindEvents() {
       id: ct.id, name: ct.name, description: ct.description || '',
       cardSize: ct.cardSize, fields: ct.fields,
       frontTemplate: ct.frontTemplate, backTemplate: ct.backTemplate || '',
-      styles: ct.styles || '', aggregations: ct.aggregations || [],
+      styles: ct.styles || ct.css || '', aggregations: ct.aggregations || [],
       colorMapping: ct.colorMapping || {},
     };
     downloadFile(`${ct.id}-bundle.json`, JSON.stringify(bundle, null, 2), 'application/json');

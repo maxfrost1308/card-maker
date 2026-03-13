@@ -586,23 +586,6 @@ html { font-family: system-ui, -apple-system, sans-serif; color: var(--text); ba
   white-space: nowrap;
 }
 
-/* ===== Card Grid Density ===== */
-.card-grid[data-density="compact"] .card-pair {
-  transform-origin: top left;
-}
-
-.card-grid[data-density="compact"] .card-wrapper {
-  transform: scale(0.6);
-  transform-origin: top left;
-  margin-right: calc(var(--card-gap) - 40%);
-  margin-bottom: calc(var(--card-gap) - 40%);
-}
-
-/* Compact: show more per row by reducing gap effects */
-.card-grid[data-density="compact"] {
-  gap: calc(var(--card-gap) * 0.4);
-  justify-content: flex-start;
-}
 
 /* ===== Custom Card Type Upload ===== */
 .custom-upload-hint {
@@ -675,6 +658,7 @@ html { font-family: system-ui, -apple-system, sans-serif; color: var(--text); ba
 
 .vs-spacer {
   position: relative;
+  pointer-events: none;
 }
 
 .vs-window {
@@ -682,6 +666,10 @@ html { font-family: system-ui, -apple-system, sans-serif; color: var(--text); ba
   top: 0;
   left: 0;
   right: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--card-gap);
+  justify-content: center;
 }
 
 /* ===== Header Export Menu (REQ-064) ===== */

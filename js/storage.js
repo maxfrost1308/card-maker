@@ -45,9 +45,10 @@ export async function saveSession() {
       cardTypeName: ct.name,
       frontTemplate: ct.frontTemplate,
       backTemplate: ct.backTemplate,
-      css: ct.css,
+      css: ct.css || ct.styles || '',
       fields: ct.fields,
       colorMapping: ct.colorMapping,
+      aggregations: ct.aggregations,
       cardSize: ct.cardSize,
       description: ct.description,
       data,
@@ -83,35 +84,44 @@ export async function loadLastSession() {
     if (Date.now() - session.savedAt > MAX_AGE_MS) return false;
     if (!session.data || session.data.length === 0) return false;
 
-    // Re-register the card type from the saved templates
-    const schemaObj = {
-      id: session.cardTypeId,
-      name: session.cardTypeName,
-      description: session.description || '',
-      cardSize: session.cardSize || { width: '63.5mm', height: '88.9mm' },
-      fields: session.fields,
-      colorMapping: session.colorMapping || null,
-    };
-    await registry.registerFromUpload(
-      new File([JSON.stringify(schemaObj)], 'card-type.json'),
-      new File([session.frontTemplate], 'front.html'),
-      session.backTemplate ? new File([session.backTemplate], 'back.html') : null,
-      session.css ? new File([session.css], 'style.css') : null,
-    );
+    // Re-register the card type from saved data using bundle format
+    // (Skip re-registration for built-in types — they're already registered)
+    const existing = registry.get(session.cardTypeId);
+    if (!existing || !existing._builtIn) {
+      await registry.registerFromBundle({
+        id: session.cardTypeId,
+        name: session.cardTypeName,
+        description: session.description || '',
+        cardSize: session.cardSize || { width: '63.5mm', height: '88.9mm' },
+        fields: session.fields,
+        colorMapping: session.colorMapping || null,
+        aggregations: session.aggregations || null,
+        frontTemplate: session.frontTemplate,
+        backTemplate: session.backTemplate || '',
+        styles: session.css || '',
+      });
+    }
 
-    // Populate the dropdown and select this type
+    // Populate the dropdown, set data, then fire change event so the full
+    // selectCardType flow runs (sidebar, field ref, updateSaveState, etc.)
     const select = document.getElementById('card-type-select');
     if (select) {
-      // Trigger refreshCardTypeList via the event system
-      // Import dynamically to avoid circular deps
       const { refreshCardTypeList } = await import('./ui.js');
       refreshCardTypeList();
       select.value = session.cardTypeId;
     }
 
+    // Set data BEFORE firing change so selectCardType sees real data (not sample)
     setData(session.data);
-    const ct = registry.get(session.cardTypeId);
-    if (ct) rerenderActiveView(ct, session.data);
+
+    // Fire change event to trigger _selectCardType → sidebar + deck bar update
+    if (select) {
+      select.dispatchEvent(new Event('change'));
+    } else {
+      // Fallback: direct rerender
+      const ct = registry.get(session.cardTypeId);
+      if (ct) rerenderActiveView(ct, session.data);
+    }
 
     const age = Math.round((Date.now() - session.savedAt) / 60000);
     const ageStr = age < 60 ? `${age}m ago` : `${Math.round(age / 60)}h ago`;

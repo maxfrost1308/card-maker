@@ -63,6 +63,7 @@ export async function registerBuiltIn(id) {
     backTemplate,
     css,
     sampleData,
+    _builtIn: true,
   };
 
   register(cardType);
@@ -218,7 +219,7 @@ export function get(id) {
  * List all registered card type ids and names.
  */
 export function listAll() {
-  return Array.from(registry.values()).map(ct => ({ id: ct.id, name: ct.name }));
+  return Array.from(registry.values()).map(ct => ({ id: ct.id, name: ct.name, builtIn: !!ct._builtIn }));
 }
 
 // -- helpers --
