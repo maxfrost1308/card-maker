@@ -117,7 +117,11 @@ export async function loadLastSession() {
     setData(session.data);
 
     if (select) {
-      select.dispatchEvent(new Event('change'));
+      // _fromRestore flag tells the change handler to skip clearFileState(),
+      // which would wipe session.data we just loaded via setData().
+      const evt = new Event('change');
+      evt._fromRestore = true;
+      select.dispatchEvent(evt);
     } else {
       const ct = registry.get(session.cardTypeId);
       if (ct) rerenderActiveView(ct, session.data);

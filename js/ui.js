@@ -446,8 +446,9 @@ export function bindEvents() {
   sidebarBackdrop.addEventListener('click', closeSidebar);
 
   // Card type selection
-  cardTypeSelect.addEventListener('change', () => {
-    clearFileState();
+  cardTypeSelect.addEventListener('change', (e) => {
+    // Don't clear file state during programmatic session restore
+    if (!e._fromRestore) clearFileState();
     _selectCardType(cardTypeSelect.value, renderCards, renderEmpty);
   });
 
