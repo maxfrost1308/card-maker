@@ -429,6 +429,62 @@ html { font-family: system-ui, -apple-system, sans-serif; color: var(--text); ba
 
 .main-area { position: relative; }
 
+/* ===== Session Resume Banner ===== */
+.resume-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  background: #e8f4fd;
+  border-bottom: 1px solid #b3d9f7;
+  font-size: 0.85rem;
+  flex-wrap: wrap;
+}
+
+html.dark .resume-banner {
+  background: #1a2e3d;
+  border-color: #2a4a60;
+}
+
+.resume-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.resume-file {
+  white-space: nowrap;
+}
+
+.resume-file-ok {
+  color: #27ae60;
+  font-weight: 500;
+}
+
+.resume-reconnect {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  white-space: nowrap;
+}
+
+.resume-reconnect:hover {
+  background: var(--accent-hover);
+}
+
+.resume-dismiss {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 1rem;
+  padding: 2px 6px;
+  border-radius: 3px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.resume-dismiss:hover { background: var(--bg); }
+
 /* ===== Deck Bar (shared filter + summary) ===== */
 .deck-bar {
   display: flex;

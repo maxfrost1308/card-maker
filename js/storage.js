@@ -10,6 +10,7 @@
 import * as registry from './card-type-registry.js';
 import { setData, getData, getActiveCardType, rerenderActiveView } from './state.js';
 import { showToast } from './toast.js';
+import { getFileHandle, getFileName, setFileHandle, showFilename, updateSaveState, loadCsvFile } from './file-io.js';
 
 const DB_NAME = 'card-maker-db';
 const DB_VERSION = 1;
@@ -53,6 +54,8 @@ export async function saveSession() {
       description: ct.description,
       data,
       savedAt: Date.now(),
+      fileHandle: getFileHandle() || null,
+      fileName: getFileName() || null,
     };
     await new Promise((res, rej) => {
       const tx = db.transaction(STORE, 'readwrite');
@@ -102,8 +105,7 @@ export async function loadLastSession() {
       });
     }
 
-    // Populate the dropdown, set data, then fire change event so the full
-    // selectCardType flow runs (sidebar, field ref, updateSaveState, etc.)
+    // Populate dropdown + fire change event so full selectCardType flow runs
     const select = document.getElementById('card-type-select');
     if (select) {
       const { refreshCardTypeList } = await import('./ui.js');
@@ -114,18 +116,20 @@ export async function loadLastSession() {
     // Set data BEFORE firing change so selectCardType sees real data (not sample)
     setData(session.data);
 
-    // Fire change event to trigger _selectCardType → sidebar + deck bar update
     if (select) {
       select.dispatchEvent(new Event('change'));
     } else {
-      // Fallback: direct rerender
       const ct = registry.get(session.cardTypeId);
       if (ct) rerenderActiveView(ct, session.data);
     }
 
+    // Try to silently reconnect to the CSV file
+    const fileReconnected = await _tryReconnectFile(session);
+
+    // Show resume banner (always, so user knows state was restored)
     const age = Math.round((Date.now() - session.savedAt) / 60000);
     const ageStr = age < 60 ? `${age}m ago` : `${Math.round(age / 60)}h ago`;
-    showToast(`Restored last session: ${session.data.length} ${session.cardTypeName} cards (${ageStr}).`, 'success', 5000);
+    _showResumeBanner(session, fileReconnected, ageStr);
 
     return true;
   } catch (err) {
@@ -148,5 +152,92 @@ export async function clearSession() {
     });
   } catch (err) {
     console.warn('[card-maker] Failed to clear session:', err.message);
+  }
+}
+
+/**
+ * Try to silently reconnect the saved file handle.
+ * Returns true if we successfully re-opened the file.
+ */
+async function _tryReconnectFile(session) {
+  const handle = session.fileHandle;
+  if (!handle || typeof handle.queryPermission !== 'function') return false;
+  try {
+    let perm = await handle.queryPermission({ mode: 'readwrite' });
+    if (perm === 'prompt') {
+      // Don't auto-prompt — let the banner button do it
+      return false;
+    }
+    if (perm === 'granted') {
+      const file = await handle.getFile();
+      setFileHandle(handle);
+      showFilename(file.name);
+      updateSaveState();
+      return true;
+    }
+  } catch (e) {
+    console.warn('[card-maker] Could not reconnect file handle:', e.message);
+  }
+  return false;
+}
+
+/**
+ * Show a persistent resume banner above the card grid.
+ * Dismissed when user clicks elsewhere or explicitly closes it.
+ */
+function _showResumeBanner(session, fileReconnected, ageStr) {
+  // Remove any existing banner
+  document.getElementById('resume-banner')?.remove();
+
+  const banner = document.createElement('div');
+  banner.id = 'resume-banner';
+  banner.className = 'resume-banner';
+  banner.setAttribute('role', 'status');
+
+  const ctName = session.cardTypeName || 'Custom';
+  const cards = session.data?.length ?? 0;
+  const fileName = session.fileName;
+
+  let fileStatus = '';
+  if (fileName && fileReconnected) {
+    fileStatus = `<span class="resume-file resume-file-ok">📄 ${fileName} — save enabled</span>`;
+  } else if (fileName && session.fileHandle) {
+    fileStatus = `<button id="resume-reconnect-btn" class="btn btn-sm resume-reconnect">📂 Reconnect ${fileName}</button>`;
+  }
+
+  banner.innerHTML = `
+    <span class="resume-info">
+      <strong>Session restored</strong> — ${cards} ${ctName} cards from ${ageStr}
+    </span>
+    ${fileStatus}
+    <button id="resume-dismiss" class="resume-dismiss" aria-label="Dismiss">✕</button>`;
+
+  // Insert before the deck-bar or as first child of main-content
+  const target = document.getElementById('main-content');
+  if (target) target.prepend(banner);
+
+  // Dismiss
+  banner.querySelector('#resume-dismiss')?.addEventListener('click', () => banner.remove());
+
+  // Reconnect button: request permission and re-read file
+  banner.querySelector('#resume-reconnect-btn')?.addEventListener('click', async () => {
+    try {
+      const handle = session.fileHandle;
+      const perm = await handle.requestPermission({ mode: 'readwrite' });
+      if (perm === 'granted') {
+        const file = await handle.getFile();
+        setFileHandle(handle);
+        await loadCsvFile(file, file.name);
+        banner.remove();
+        showToast(`Reconnected to ${file.name}`, 'success');
+      }
+    } catch (e) {
+      showToast('Could not reconnect to file: ' + e.message, 'error');
+    }
+  });
+
+  // Auto-dismiss after 8 seconds if file is already reconnected
+  if (fileReconnected) {
+    setTimeout(() => banner?.remove(), 8000);
   }
 }

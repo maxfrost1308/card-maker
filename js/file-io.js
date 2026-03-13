@@ -12,12 +12,14 @@ import { showToast } from './toast.js';
 
 /** @type {FileSystemFileHandle|null} */
 let _fileHandle = null;
+let _fileName = null; // display name for session restore
 
 /** Whether the File System Access API is available (Chromium only). */
 export const hasFSAPI = typeof window !== 'undefined' && 'showOpenFilePicker' in window;
 
 /** @returns {FileSystemFileHandle|null} */
 export function getFileHandle() { return _fileHandle; }
+export function getFileName() { return _fileName; }
 
 /** @param {FileSystemFileHandle|null} h */
 export function setFileHandle(h) { _fileHandle = h; }
@@ -91,11 +93,12 @@ export async function loadCsvFile(file, displayName) {
     if (unmatched.length > 0) console.warn(`[card-maker] Unmatched schema fields: ${unmatched.join(', ')}`);
   }
 
+  _fileName = displayName || file.name;
   setData(data);
   updateDeckBar();
   rerenderActiveView(ct, data);
   updateSaveState();
-  showFilename(displayName || file.name);
+  showFilename(_fileName);
   showToast(`Loaded ${data.length} card(s).`, 'success');
 }
 
@@ -156,6 +159,7 @@ export function showFilename(name) {
  */
 export function clearFileState() {
   _fileHandle = null;
+  _fileName = null;
   setData(null);
   const csvUpload = document.getElementById('csv-upload');
   if (csvUpload) csvUpload.value = '';
