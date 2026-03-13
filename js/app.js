@@ -42,7 +42,7 @@ async function init() {
       return;
     }
 
-    autoSelect('plant-care');
+    autoSelect('ttrpg');
   } catch (err) {
     console.error('Failed to initialize:', err);
     showToast('Failed to load card types: ' + err.message, 'error', 8000);

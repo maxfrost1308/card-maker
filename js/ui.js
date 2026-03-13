@@ -43,8 +43,12 @@ const customFront = document.getElementById('custom-front');
 const customBack = document.getElementById('custom-back');
 const customCss = document.getElementById('custom-css');
 const customUploadBtn = document.getElementById('custom-upload-btn');
+const mainArea = document.getElementById('main-content');
 
-let activeView = 'cards'; // 'cards' | 'table'
+let activeView = 'cards';       // 'cards' | 'table'
+let overlayMode = false;        // show field data overlaid on cards
+let selectMode = false;         // card selection mode
+const selectedCards = new Set(); // selected card data indices
 let _virtualGrid = null; // active VirtualGrid instance (if any)
 
 // ── Public re-exports (backward compat) ──────────────────────────────────────
@@ -150,6 +154,7 @@ export async function renderCards(cardType, rows, filteredIndices) {
     const row = rows[idx];
     const pair = document.createElement('div');
     pair.className = 'card-pair';
+    if (selectMode && selectedCards.has(idx)) pair.classList.add('selected');
     pair.setAttribute('role', 'listitem');
 
     const frontWrapper = document.createElement('div');
@@ -170,12 +175,49 @@ export async function renderCards(cardType, rows, filteredIndices) {
       pair.appendChild(backWrapper);
     }
 
+    // Overlay: show field data on top of card when overlay mode is active
+    if (overlayMode) {
+      const overlay = document.createElement('div');
+      overlay.className = 'card-overlay';
+      overlay.setAttribute('aria-hidden', 'true');
+      const lines = cardType.fields
+        .filter(f => row[f.key] && String(row[f.key]).trim())
+        .slice(0, 6)
+        .map(f => `<div class="overlay-field"><span class="overlay-label">${f.label}</span><span class="overlay-value">${String(row[f.key]).slice(0, 40)}</span></div>`)
+        .join('');
+      overlay.innerHTML = lines;
+      frontWrapper.appendChild(overlay);
+    }
+
+    // Selection checkbox (visible in select mode)
+    if (selectMode) {
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.className = 'card-select-cb';
+      cb.checked = selectedCards.has(idx);
+      cb.setAttribute('aria-label', `Select card ${idx + 1}`);
+      cb.addEventListener('change', () => {
+        if (cb.checked) selectedCards.add(idx); else selectedCards.delete(idx);
+        pair.classList.toggle('selected', cb.checked);
+        _updateCardSelectionBar();
+      });
+      pair.appendChild(cb);
+    }
+
     const editBtn = document.createElement('button');
     editBtn.className = 'card-edit-btn';
     editBtn.textContent = '\u270E';
     editBtn.title = 'Edit this card';
     editBtn.setAttribute('aria-label', `Edit card ${idx + 1}`);
-    editBtn.addEventListener('click', (e) => openEditModal(idx, e.currentTarget));
+    editBtn.addEventListener('click', (e) => {
+      if (selectMode) {
+        // In select mode, clicking the edit button toggles selection
+        const cb = pair.querySelector('.card-select-cb');
+        if (cb) { cb.checked = !cb.checked; cb.dispatchEvent(new Event('change')); }
+        return;
+      }
+      openEditModal(idx, e.currentTarget);
+    });
     pair.appendChild(editBtn);
 
     cardGrid.appendChild(pair);
@@ -211,6 +253,148 @@ function _appendAddCardBtn(cardType, liveData, width, height) {
   });
   addPair.appendChild(addBtn);
   cardGrid.appendChild(addPair);
+}
+
+/**
+ * Update card selection bar counts and button states.
+ */
+function _updateCardSelectionBar() {
+  const countEl = document.getElementById('card-selected-count');
+  const bulkBtn = document.getElementById('bulk-edit-btn');
+  const n = selectedCards.size;
+  if (countEl) countEl.textContent = `${n} selected`;
+  if (bulkBtn) bulkBtn.disabled = n === 0;
+}
+
+/**
+ * Open the bulk-edit modal for selected cards.
+ */
+function openBulkEditModal() {
+  const ct = getActiveCardType();
+  const data = getData() || ct?.sampleData;
+  if (!ct || !data || selectedCards.size === 0) return;
+
+  const modal = document.getElementById('bulk-edit-modal');
+  const fieldsEl = document.getElementById('bulk-edit-fields');
+  if (!modal || !fieldsEl) return;
+
+  fieldsEl.innerHTML = '';
+  for (const field of ct.fields) {
+    if (field.type === 'icon') continue; // skip icon fields in bulk edit
+
+    const row = document.createElement('div');
+    row.className = 'edit-field-row';
+
+    const label = document.createElement('label');
+    label.className = 'edit-field-label';
+    label.textContent = field.label || field.key;
+    row.appendChild(label);
+
+    let input;
+    if (field.type === 'select' && field.options) {
+      input = document.createElement('select');
+      input.className = 'edit-field-input';
+      input.dataset.fieldKey = field.key;
+      const blank = document.createElement('option');
+      blank.value = '';
+      blank.textContent = '— leave unchanged —';
+      input.appendChild(blank);
+      for (const opt of field.options) {
+        const o = document.createElement('option');
+        o.value = opt; o.textContent = opt;
+        input.appendChild(o);
+      }
+    } else if (field.type === 'multi-select' && field.options) {
+      // Show as a compact checkbox list
+      const wrap = document.createElement('div');
+      wrap.className = 'bulk-ms-wrap';
+      wrap.dataset.fieldKey = field.key;
+      wrap.dataset.fieldType = 'multi-select';
+      const none = document.createElement('label');
+      none.className = 'bulk-ms-none';
+      none.innerHTML = '<input type="radio" name="bms_' + field.key + '" value="" checked> leave unchanged';
+      wrap.appendChild(none);
+      for (const opt of field.options) {
+        const lbl = document.createElement('label');
+        lbl.innerHTML = `<input type="checkbox" name="bms_${field.key}" value="${opt}" disabled> ${opt}`;
+        wrap.appendChild(lbl);
+      }
+      none.querySelector('input').addEventListener('change', () => {
+        wrap.querySelectorAll('input[type=checkbox]').forEach(c => { c.disabled = true; c.checked = false; });
+      });
+      const setBtn = document.createElement('label');
+      setBtn.innerHTML = `<input type="radio" name="bms_${field.key}" value="set"> Set to:`;
+      setBtn.querySelector('input').addEventListener('change', () => {
+        wrap.querySelectorAll('input[type=checkbox]').forEach(c => { c.disabled = false; });
+      });
+      wrap.appendChild(setBtn);
+      row.appendChild(wrap);
+      fieldsEl.appendChild(row);
+      continue;
+    } else if (field.type === 'text-long') {
+      input = document.createElement('textarea');
+      input.className = 'edit-field-input';
+      input.rows = 2;
+      input.dataset.fieldKey = field.key;
+      input.placeholder = 'Leave blank to keep existing value';
+    } else {
+      input = document.createElement('input');
+      input.type = field.type === 'number' ? 'number' : 'text';
+      input.className = 'edit-field-input';
+      input.dataset.fieldKey = field.key;
+      input.placeholder = 'Leave blank to keep existing value';
+    }
+    row.appendChild(input);
+    fieldsEl.appendChild(row);
+  }
+
+  modal.hidden = false;
+  modal.querySelector('#bulk-edit-save').dataset.cardType = ct.id;
+}
+
+function closeBulkEditModal() {
+  const modal = document.getElementById('bulk-edit-modal');
+  if (modal) modal.hidden = true;
+}
+
+function applyBulkEdit() {
+  const ct = getActiveCardType();
+  const data = getData();
+  if (!ct || !data || selectedCards.size === 0) { closeBulkEditModal(); return; }
+
+  const modal = document.getElementById('bulk-edit-modal');
+  const updates = {};
+
+  // Collect plain input fields
+  modal.querySelectorAll('[data-field-key]').forEach(el => {
+    if (el.dataset.fieldType === 'multi-select') return; // handled below
+    const val = el.value?.trim();
+    if (val) updates[el.dataset.fieldKey] = val;
+  });
+
+  // Collect multi-select fields
+  modal.querySelectorAll('.bulk-ms-wrap').forEach(wrap => {
+    const setRadio = wrap.querySelector('input[type=radio][value=set]');
+    if (!setRadio?.checked) return;
+    const chosen = [...wrap.querySelectorAll('input[type=checkbox]:checked')].map(c => c.value);
+    if (chosen.length > 0) updates[wrap.dataset.fieldKey] = chosen.join('; ');
+  });
+
+  if (Object.keys(updates).length === 0) {
+    showToast('No fields filled in — nothing changed.', 'error');
+    return;
+  }
+
+  // Apply updates to selected rows
+  const newData = data.map((row, i) => {
+    if (!selectedCards.has(i)) return row;
+    return { ...row, ...updates };
+  });
+
+  setData(newData);
+  showToast(`Updated ${selectedCards.size} card${selectedCards.size !== 1 ? 's' : ''}.`, 'success');
+  closeBulkEditModal();
+  rerenderActiveView(ct, newData);
 }
 
 /**
@@ -289,7 +473,7 @@ export function bindEvents() {
       e.preventDefault();
       const target = activeView === 'table'
         ? document.querySelector('.table-global-filter')
-        : document.getElementById('card-search-input');
+        : document.getElementById('shared-search');
       target?.focus(); target?.select?.();
       return;
     }
@@ -303,7 +487,7 @@ export function bindEvents() {
     rerenderActiveView(ct, getData() || ct.sampleData);
   });
 
-  // View toggle
+  // View toggle (Cards / Table)
   const viewBtns = document.querySelectorAll('.view-btn');
   const tableViewEl = document.getElementById('table-view');
   viewBtns.forEach(btn => {
@@ -319,6 +503,95 @@ export function bindEvents() {
       if (ct && data) rerenderActiveView(ct, data);
     });
   });
+
+  // Card grid size toggle (comfortable / compact)
+  const sizeBtns = document.querySelectorAll('.size-btn');
+  sizeBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const size = btn.dataset.size;
+      sizeBtns.forEach(b => b.classList.toggle('active', b.dataset.size === size));
+      cardGrid.dataset.density = size;
+      // Re-render so virtual grid recalculates column counts
+      const ct = getActiveCardType();
+      const data = getData() || ct?.sampleData;
+      if (ct && data && activeView === 'cards') rerenderActiveView(ct, data);
+    });
+  });
+
+  // Select mode toggle
+  const selectModeBtn = document.getElementById('select-mode-btn');
+  const selectionBar = document.getElementById('card-selection-bar');
+  const bulkEditBtn = document.getElementById('bulk-edit-btn');
+  const selectAllCardsBtn = document.getElementById('select-all-cards-btn');
+  const clearSelectionBtn = document.getElementById('clear-selection-btn');
+
+  if (selectModeBtn) {
+    selectModeBtn.addEventListener('click', () => {
+      selectMode = !selectMode;
+      selectedCards.clear();
+      selectModeBtn.classList.toggle('active', selectMode);
+      selectModeBtn.textContent = selectMode ? '✕ Done' : '☑ Select';
+      if (selectionBar) selectionBar.hidden = !selectMode;
+      cardGrid.classList.toggle('select-mode', selectMode);
+      const ct = getActiveCardType();
+      const data = getData() || ct?.sampleData;
+      if (ct && data && activeView === 'cards') rerenderActiveView(ct, data);
+      _updateCardSelectionBar();
+    });
+  }
+
+  if (selectAllCardsBtn) {
+    selectAllCardsBtn.addEventListener('click', () => {
+      const ct = getActiveCardType();
+      const data = getData() || ct?.sampleData;
+      if (!data) return;
+      const q = getQuery().toLowerCase();
+      const indices = q
+        ? data.map((_, i) => i).filter(i => ct.fields.some(f => String(data[i][f.key] || '').toLowerCase().includes(q)))
+        : data.map((_, i) => i);
+      indices.forEach(i => selectedCards.add(i));
+      _updateCardSelectionBar();
+      // Update checkboxes in DOM
+      cardGrid.querySelectorAll('.card-pair').forEach((pair, j) => {
+        const cb = pair.querySelector('.card-select-cb');
+        if (cb) { cb.checked = true; pair.classList.add('selected'); }
+      });
+    });
+  }
+
+  if (clearSelectionBtn) {
+    clearSelectionBtn.addEventListener('click', () => {
+      selectedCards.clear();
+      _updateCardSelectionBar();
+      cardGrid.querySelectorAll('.card-pair').forEach(pair => {
+        const cb = pair.querySelector('.card-select-cb');
+        if (cb) { cb.checked = false; pair.classList.remove('selected'); }
+      });
+    });
+  }
+
+  if (bulkEditBtn) {
+    bulkEditBtn.addEventListener('click', () => openBulkEditModal());
+  }
+
+  // Bulk edit modal
+  document.getElementById('bulk-edit-close')?.addEventListener('click', closeBulkEditModal);
+  document.getElementById('bulk-edit-cancel')?.addEventListener('click', closeBulkEditModal);
+  document.getElementById('bulk-edit-save')?.addEventListener('click', applyBulkEdit);
+
+  // Overlay toggle
+  const overlayBtn = document.getElementById('overlay-toggle-btn');
+  if (overlayBtn) {
+    overlayBtn.addEventListener('click', () => {
+      overlayMode = !overlayMode;
+      overlayBtn.setAttribute('aria-pressed', String(overlayMode));
+      overlayBtn.classList.toggle('active', overlayMode);
+      cardGrid.classList.toggle('overlay-mode', overlayMode);
+      const ct = getActiveCardType();
+      const data = getData() || ct?.sampleData;
+      if (ct && data && activeView === 'cards') rerenderActiveView(ct, data);
+    });
+  }
 
   // Print
   printBtn.addEventListener('click', () => {
