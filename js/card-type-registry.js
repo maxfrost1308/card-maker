@@ -124,6 +124,54 @@ export async function registerFromUpload(schemaFile, frontFile, backFile, cssFil
 }
 
 /**
+ * Register a card type from a single bundle JSON object.
+ * The bundle contains schema fields + inlined frontTemplate, backTemplate, styles.
+ * @param {Object} bundle - Parsed JSON bundle
+ * @returns {Object} registered cardType
+ */
+export async function registerFromBundle(bundle) {
+  if (!bundle || typeof bundle !== 'object') throw new Error('Invalid bundle: expected a JSON object.');
+  if (!bundle.id || typeof bundle.id !== 'string') throw new Error('Bundle must have a string "id" field.');
+  if (!bundle.name || typeof bundle.name !== 'string') throw new Error('Bundle must have a string "name" field.');
+  if (!bundle.fields || !Array.isArray(bundle.fields)) throw new Error('Bundle must have a "fields" array.');
+  if (!bundle.frontTemplate || typeof bundle.frontTemplate !== 'string') throw new Error('Bundle must have a "frontTemplate" string.');
+
+  const validTypes = ['text', 'select', 'multi-select', 'tags', 'url', 'image', 'number', 'icon', 'qr', 'text-long'];
+  for (const f of bundle.fields) {
+    if (!f.key || typeof f.key !== 'string') throw new Error(`Field missing string "key": ${JSON.stringify(f)}`);
+    if (!f.type || typeof f.type !== 'string') throw new Error(`Field "${f.key}" missing "type".`);
+    if (!validTypes.includes(f.type)) {
+      throw new Error(`Field "${f.key}" has invalid type "${f.type}". Valid: ${validTypes.join(', ')}`);
+    }
+    if (f.options !== undefined && !Array.isArray(f.options)) {
+      throw new Error(`Field "${f.key}" — "options" must be an array if provided.`);
+    }
+  }
+
+  if (/<script/i.test(bundle.frontTemplate) || (bundle.backTemplate && /<script/i.test(bundle.backTemplate))) {
+    console.warn('[card-maker] Bundle templates contain <script> tags. Only load bundles from trusted sources.');
+  }
+
+  const cardType = {
+    id: bundle.id,
+    name: bundle.name,
+    description: bundle.description || '',
+    cardSize: bundle.cardSize || { width: '63.5mm', height: '88.9mm' },
+    fields: bundle.fields,
+    colorMapping: bundle.colorMapping || null,
+    aggregations: bundle.aggregations || null,
+    frontTemplate: bundle.frontTemplate,
+    backTemplate: bundle.backTemplate || null,
+    css: bundle.styles || bundle.css || '',
+    sampleData: bundle.sampleData || null,
+    _sanitizeCss: true,
+  };
+
+  register(cardType);
+  return cardType;
+}
+
+/**
  * Sanitize user-supplied CSS to prevent external resource loading.
  * Strips @import rules and url() references to external (non-data:) sources.
  * @param {string} css

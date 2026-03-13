@@ -39,6 +39,7 @@
         <button class="btn size-btn" data-size="compact" title="Compact — more cards per row">⊞</button>
       </div>
       <button id="overlay-toggle-btn" class="btn" title="Toggle field overlay on cards" aria-pressed="false">⊕ Overlay</button>
+      <button id="add-card-btn" class="btn btn-primary" hidden title="Add a new card (requires data loaded)">+ Add Card</button>
       <label class="toggle-label">
         <input type="checkbox" id="show-backs" checked>
         Show backs
@@ -87,29 +88,17 @@
       </section>
 
       <section class="sidebar-section">
-        <h2>Upload Custom Card Type</h2>
+        <h2>Custom Card Type</h2>
         <div class="custom-upload-group">
-          <label>
-            Schema (JSON)
-            <a href="#" class="starter-link" data-starter="schema">download starter</a>
-            <input type="file" id="custom-schema" accept=".json">
+          <p class="custom-upload-hint">A single JSON file containing your schema, templates, and styles. <a href="#" class="starter-link" data-starter="bundle">Download starter</a></p>
+          <label class="custom-file-label" id="custom-file-label">
+            <input type="file" id="custom-bundle" accept=".json">
+            <span id="custom-file-name">No file chosen</span>
           </label>
-          <label>
-            Front Template (HTML)
-            <a href="#" class="starter-link" data-starter="front">download starter</a>
-            <input type="file" id="custom-front" accept=".html,.htm">
-          </label>
-          <label>
-            Back Template (HTML)
-            <a href="#" class="starter-link" data-starter="back">download starter</a>
-            <input type="file" id="custom-back" accept=".html,.htm">
-          </label>
-          <label>
-            Styles (CSS)
-            <a href="#" class="starter-link" data-starter="css">download starter</a>
-            <input type="file" id="custom-css" accept=".css">
-          </label>
-          <button id="custom-upload-btn" class="btn">Register Card Type</button>
+          <div class="custom-upload-actions">
+            <button id="custom-upload-btn" class="btn btn-primary">Load Card Type</button>
+            <button id="custom-download-btn" class="btn" title="Download current card type as a bundle JSON">⬇ Download current</button>
+          </div>
         </div>
       </section>
     </aside>

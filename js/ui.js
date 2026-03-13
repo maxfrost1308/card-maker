@@ -13,6 +13,17 @@ import { renderTable, getFilteredIndices } from './table-view.js';
 import { initEditView, openEditModal } from './edit-view.js';
 import { buildPrintLayout, clearPrintLayout } from './print-layout.js';
 import { getStarterSchema, getStarterFront, getStarterBack, getStarterCss } from './starter-files.js';
+
+/** Build a starter bundle JSON combining schema + templates + styles. */
+function _getStarterBundle() {
+  const schema = JSON.parse(getStarterSchema());
+  return JSON.stringify({
+    ...schema,
+    frontTemplate: getStarterFront(),
+    backTemplate: getStarterBack(),
+    styles: getStarterCss(),
+  }, null, 2);
+}
 import { preloadIcons } from './icon-loader.js';
 import { setData, getData, registerRerenderFn, registerGetActiveCardTypeFn } from './state.js';
 import { createVirtualGrid, VS_THRESHOLD } from './virtual-scroll.js';
@@ -38,10 +49,7 @@ const showBacksToggle = document.getElementById('show-backs');
 const sidebarEl = document.getElementById('sidebar');
 const sidebarToggleBtn = document.getElementById('sidebar-toggle');
 const sidebarBackdrop = document.getElementById('sidebar-backdrop');
-const customSchema = document.getElementById('custom-schema');
-const customFront = document.getElementById('custom-front');
-const customBack = document.getElementById('custom-back');
-const customCss = document.getElementById('custom-css');
+const customBundle = document.getElementById('custom-bundle');
 const customUploadBtn = document.getElementById('custom-upload-btn');
 const mainArea = document.getElementById('main-content');
 
@@ -78,6 +86,9 @@ export async function rerenderActiveView(cardType, rows) {
   if (!cardType || !rows) return;
 
   updateDeckBar();
+  // Show Add Card button only when real (non-sample) data is loaded
+  const addBtn = document.getElementById('add-card-btn');
+  if (addBtn) addBtn.hidden = !getData();
 
   if (activeView === 'table') {
     renderTable(cardType, rows);
@@ -138,9 +149,6 @@ export async function renderCards(cardType, rows, filteredIndices) {
       onEditCard: (idx, btn) => openEditModal(idx, btn),
       renderCardHtml: renderCard,
     });
-    // Still append add-card button (outside virtual window)
-    const liveData = getData();
-    if (liveData) _appendAddCardBtn(cardType, liveData, width, height);
     return;
   }
 
@@ -204,6 +212,7 @@ export async function renderCards(cardType, rows, filteredIndices) {
       pair.appendChild(cb);
     }
 
+    // Edit button rendered inside the card front (hover to reveal)
     const editBtn = document.createElement('button');
     editBtn.className = 'card-edit-btn';
     editBtn.textContent = '\u270E';
@@ -211,21 +220,16 @@ export async function renderCards(cardType, rows, filteredIndices) {
     editBtn.setAttribute('aria-label', `Edit card ${idx + 1}`);
     editBtn.addEventListener('click', (e) => {
       if (selectMode) {
-        // In select mode, clicking the edit button toggles selection
         const cb = pair.querySelector('.card-select-cb');
         if (cb) { cb.checked = !cb.checked; cb.dispatchEvent(new Event('change')); }
         return;
       }
       openEditModal(idx, e.currentTarget);
     });
-    pair.appendChild(editBtn);
+    frontWrapper.appendChild(editBtn);
 
     cardGrid.appendChild(pair);
   }
-
-  // REQ-060: add-card button
-  const liveData = getData();
-  if (liveData) _appendAddCardBtn(cardType, liveData, width, height);
 
   if (displayIndices.length === 0 && !getData()) renderEmpty();
 }
@@ -579,6 +583,21 @@ export function bindEvents() {
   document.getElementById('bulk-edit-cancel')?.addEventListener('click', closeBulkEditModal);
   document.getElementById('bulk-edit-save')?.addEventListener('click', applyBulkEdit);
 
+  // Add Card (header button)
+  const addCardBtn = document.getElementById('add-card-btn');
+  if (addCardBtn) {
+    addCardBtn.addEventListener('click', () => {
+      const ct = getActiveCardType();
+      const data = getData();
+      if (!ct || !data) return;
+      const emptyRow = {};
+      for (const f of ct.fields) emptyRow[f.key] = '';
+      data.push(emptyRow);
+      setData(data);
+      openEditModal(data.length - 1, addCardBtn);
+    });
+  }
+
   // Overlay toggle
   const overlayBtn = document.getElementById('overlay-toggle-btn');
   if (overlayBtn) {
@@ -621,18 +640,31 @@ export function bindEvents() {
   // Edit view
   initEditView();
 
-  // Starter downloads
-  document.querySelector('.custom-upload-group').addEventListener('click', (e) => {
-    if (!e.target.matches('.starter-link')) return;
+  // Starter bundle download
+  document.querySelector('.custom-upload-group')?.addEventListener('click', (e) => {
+    if (!e.target.matches('.starter-link[data-starter="bundle"]')) return;
     e.preventDefault();
-    const starters = {
-      schema: { fn: getStarterSchema, name: 'card-type.json', mime: 'application/json' },
-      front:  { fn: getStarterFront,  name: 'front.html',     mime: 'text/html' },
-      back:   { fn: getStarterBack,   name: 'back.html',      mime: 'text/html' },
-      css:    { fn: getStarterCss,    name: 'style.css',       mime: 'text/css' },
+    downloadFile('card-type-bundle.json', _getStarterBundle(), 'application/json');
+  });
+
+  // File name display
+  customBundle?.addEventListener('change', () => {
+    const nameEl = document.getElementById('custom-file-name');
+    if (nameEl) nameEl.textContent = customBundle.files[0]?.name || 'No file chosen';
+  });
+
+  // Download current card type as bundle
+  document.getElementById('custom-download-btn')?.addEventListener('click', () => {
+    const ct = getActiveCardType();
+    if (!ct) { showToast('No card type selected.', 'error'); return; }
+    const bundle = {
+      id: ct.id, name: ct.name, description: ct.description || '',
+      cardSize: ct.cardSize, fields: ct.fields,
+      frontTemplate: ct.frontTemplate, backTemplate: ct.backTemplate || '',
+      styles: ct.styles || '', aggregations: ct.aggregations || [],
+      colorMapping: ct.colorMapping || {},
     };
-    const s = starters[e.target.dataset.starter];
-    if (s) downloadFile(s.name, s.fn(), s.mime);
+    downloadFile(`${ct.id}-bundle.json`, JSON.stringify(bundle, null, 2), 'application/json');
   });
 
   // Shared deck filter bar (REQ-065, shared between card + table views)
@@ -668,20 +700,21 @@ export function bindEvents() {
   if (hasFSAPI) csvUpload.style.display = 'none';
   else openCsvBtn.style.display = 'none';
 
-  // Custom card type upload
-  customUploadBtn.addEventListener('click', async () => {
-    if (!customSchema.files[0]) { showToast('Please provide a schema JSON file.', 'error'); return; }
-    if (!customFront.files[0]) { showToast('Please provide a front template HTML file.', 'error'); return; }
+  // Custom card type upload (single bundle JSON)
+  customUploadBtn?.addEventListener('click', async () => {
+    const file = customBundle?.files[0];
+    if (!file) { showToast('Please choose a card type JSON file.', 'error'); return; }
     try {
-      const ct = await registry.registerFromUpload(
-        customSchema.files[0], customFront.files[0],
-        customBack.files[0] || null, customCss.files[0] || null
-      );
+      const text = await file.text();
+      const bundle = JSON.parse(text);
+      const ct = await registry.registerFromBundle(bundle);
       _refreshCardTypeList();
       cardTypeSelect.value = ct.id;
       _selectCardType(ct.id, renderCards, renderEmpty);
-      showToast(`Registered card type: ${ct.name}`, 'success');
-      customSchema.value = ''; customFront.value = ''; customBack.value = ''; customCss.value = '';
+      showToast(`Loaded card type: ${ct.name}`, 'success');
+      if (customBundle) { customBundle.value = ''; }
+      const nameEl = document.getElementById('custom-file-name');
+      if (nameEl) nameEl.textContent = 'No file chosen';
     } catch (err) { showToast(err.message, 'error', 6000); }
   });
 
