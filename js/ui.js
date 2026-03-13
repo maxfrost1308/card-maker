@@ -146,6 +146,7 @@ export async function renderCards(cardType, rows, filteredIndices) {
       rows,
       filteredIndices: indices,
       showBacks,
+      overlayMode,
       onEditCard: (idx, btn) => openEditModal(idx, btn),
       renderCardHtml: renderCard,
     });

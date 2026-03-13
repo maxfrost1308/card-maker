@@ -46,6 +46,7 @@ export function createVirtualGrid(container, opts) {
   let rows = opts.rows || [];
   let filteredIndices = opts.filteredIndices || null;
   let showBacks = opts.showBacks ?? false;
+  let overlayMode = opts.overlayMode ?? false;
 
   function getIndices() { return filteredIndices || rows.map((_, i) => i); }
 
@@ -90,6 +91,20 @@ export function createVirtualGrid(container, opts) {
     front.style.height = cardH;
     front.dataset.cardType = cardType.id;
     front.innerHTML = renderCardHtml(cardType.frontTemplate, row, cardType.fields, cardType);
+
+    // Overlay: show field data on top of card when overlay mode is active
+    if (overlayMode) {
+      const overlay = document.createElement('div');
+      overlay.className = 'card-overlay';
+      overlay.setAttribute('aria-hidden', 'true');
+      const lines = cardType.fields
+        .filter(f => row[f.key] && String(row[f.key]).trim())
+        .slice(0, 6)
+        .map(f => `<div class="overlay-field"><span class="overlay-label">${f.label}</span><span class="overlay-value">${String(row[f.key]).slice(0, 40)}</span></div>`)
+        .join('');
+      overlay.innerHTML = lines;
+      front.appendChild(overlay);
+    }
 
     // Edit button inside card wrapper (hover to reveal)
     const editBtn = document.createElement('button');
@@ -158,10 +173,11 @@ export function createVirtualGrid(container, opts) {
     resizeObs.observe(container);
   }
 
-  function refresh(newRows, newFilteredIndices, newShowBacks) {
+  function refresh(newRows, newFilteredIndices, newShowBacks, newOverlayMode) {
     rows = newRows;
     filteredIndices = newFilteredIndices ?? null;
     showBacks = newShowBacks ?? showBacks;
+    overlayMode = newOverlayMode ?? overlayMode;
     _lastRange = '';
     updateSpacerHeight(getIndices());
     onScroll();
