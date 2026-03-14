@@ -71,6 +71,31 @@ test.describe("Sub Header Panel", () => {
   // ═══════════════════════════════════════════════════════════════════════════
 
   test.describe("Column Filters", () => {
+    test("filter bar stays above table header when scrolled", async ({ page }) => {
+      await loadPlantCards(page);
+      await switchToTable(page);
+      // Scroll down so both sticky elements engage
+      await page.evaluate(() => window.scrollBy(0, 200));
+      await page.waitForTimeout(200);
+      const controlsBar = page.locator(".table-controls");
+      const tableHeader = page.locator("#table-view thead");
+      await expect(controlsBar).toBeVisible();
+      await expect(tableHeader).toBeVisible();
+      const controlsBox = await controlsBar.boundingBox();
+      const headerBox = await tableHeader.boundingBox();
+      // The controls bar (containing filter bar) must visually render on top of
+      // the table header — its z-index must be >= the header's z-index.
+      // When both are sticky at top:0, the controls bar should occlude the header,
+      // not the other way around. We verify by checking computed z-index.
+      const controlsZ = await controlsBar.evaluate(
+        (el) => parseInt(getComputedStyle(el).zIndex) || 0
+      );
+      const headerZ = await tableHeader.evaluate(
+        (el) => parseInt(getComputedStyle(el.querySelector("th")).zIndex) || 0
+      );
+      expect(controlsZ).toBeGreaterThan(headerZ);
+    });
+
     test("Add filter button shows property dropdown", async ({ page }) => {
       await loadPlantCards(page);
       await switchToTable(page);
