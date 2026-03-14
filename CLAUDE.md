@@ -44,26 +44,30 @@ css/print.css        → Print layout overrides
 Several elements use `position: sticky` or `position: absolute`. This table tracks
 the stacking order to prevent overlap bugs.
 
-| Layer | Z-Index | Element | Position | Notes |
-|-------|---------|---------|----------|-------|
-| Table header | 20 | `.data-table th` | sticky, top: 0 | Column headers stick on scroll |
-| Controls bar | 30 | `.table-controls` | sticky, top: 0 | Must be above table header |
-| Dropdowns | 50 | `.filter-bar-dropdown`, `.col-prefs-dropdown`, `.tag-picker-dropdown` | absolute | Positioned from parent |
-| Modals | — | `#edit-modal`, `#bulk-edit-modal` | fixed | Full-screen overlays via `hidden` attr |
+| Layer        | Z-Index | Element                                                               | Position       | Notes                                  |
+| ------------ | ------- | --------------------------------------------------------------------- | -------------- | -------------------------------------- |
+| Table header | 20      | `.data-table th`                                                      | sticky, top: 0 | Column headers stick on scroll         |
+| Controls bar | 30      | `.table-controls`                                                     | sticky, top: 0 | Must be above table header             |
+| Dropdowns    | 50      | `.filter-bar-dropdown`, `.col-prefs-dropdown`, `.tag-picker-dropdown` | absolute       | Positioned from parent                 |
+| Modals       | —       | `#edit-modal`, `#bulk-edit-modal`                                     | fixed          | Full-screen overlays via `hidden` attr |
 
 **Circular dependency avoidance:** `state.js` provides accessor functions (`getData`, `setRowData`, `rerenderActiveView`) so that `table-view.js` and `edit-view.js` don't import from `ui.js`.
 
 ## Key Concepts
 
 ### Card Types
+
 JSON schema at `card-types/<id>/card-type.json` with fields, templates, and styles:
+
 - **Built-in:** Plant Care, TTRPG
 - **Custom:** Upload a single JSON bundle file
 
 ### Field Types
+
 `text`, `text-long`, `number`, `select`, `multi-select`, `tags`, `url`, `image`, `icon`, `qr`, `hidden`
 
 ### Template Syntax
+
 ```
 {{field}}              — HTML-escaped value
 {{{field}}}            — Raw HTML (no escaping)
@@ -74,42 +78,44 @@ JSON schema at `card-types/<id>/card-type.json` with fields, templates, and styl
 ```
 
 ### Pill/Tag Rendering
+
 - `select` and `multi-select` fields render as colored pills in table cells
 - Colors from `pillColors` in schema or `hashTagColor()` for tags
 - Inline editing uses `createPillPicker()` / `createTagPicker()` from `table/pill-picker.js`
 
 ## DOM IDs & Selectors (for test authoring)
 
-| Element | Selector |
-|---------|----------|
-| Card type dropdown | `#card-type-select` |
-| CSV file input | `input[type="file"][accept*=".csv"]` |
-| Open CSV button | `#open-csv-btn` |
-| Save button | `#save-btn` |
-| Card grid | `#card-grid` |
-| Table view | `#table-view` |
-| View toggle buttons | `.view-btn[data-view="cards\|table"]` |
-| Overlay button | `#overlay-toggle-btn` |
-| Add Card button | `#add-card-btn` |
-| Show Backs checkbox | `#show-backs` |
-| Print button | `#print-btn` |
-| Dark mode toggle | `#dark-mode-toggle` |
-| Export menu button | `#export-menu-btn` |
-| Export menu | `#export-menu` |
-| Edit modal | `#edit-modal` (role=dialog) |
-| Edit title | `#edit-title` |
-| Bulk edit modal | `#bulk-edit-modal` |
-| Toast | `#toast` (aria-live=polite) |
-| Table global search | `.table-global-filter` |
-| Filter bar | `.filter-bar` |
-| Column prefs button | `.table-col-prefs-btn` |
-| Row count | `.table-row-count` |
-| Aggregation bar | `.table-aggregation-bar` |
-| Table cell navigation | `td[data-nav-row][data-nav-col]` |
+| Element               | Selector                              |
+| --------------------- | ------------------------------------- |
+| Card type dropdown    | `#card-type-select`                   |
+| CSV file input        | `input[type="file"][accept*=".csv"]`  |
+| Open CSV button       | `#open-csv-btn`                       |
+| Save button           | `#save-btn`                           |
+| Card grid             | `#card-grid`                          |
+| Table view            | `#table-view`                         |
+| View toggle buttons   | `.view-btn[data-view="cards\|table"]` |
+| Overlay button        | `#overlay-toggle-btn`                 |
+| Add Card button       | `#add-card-btn`                       |
+| Show Backs checkbox   | `#show-backs`                         |
+| Print button          | `#print-btn`                          |
+| Dark mode toggle      | `#dark-mode-toggle`                   |
+| Export menu button    | `#export-menu-btn`                    |
+| Export menu           | `#export-menu`                        |
+| Edit modal            | `#edit-modal` (role=dialog)           |
+| Edit title            | `#edit-title`                         |
+| Bulk edit modal       | `#bulk-edit-modal`                    |
+| Toast                 | `#toast` (aria-live=polite)           |
+| Table global search   | `.table-global-filter`                |
+| Filter bar            | `.filter-bar`                         |
+| Column prefs button   | `.table-col-prefs-btn`                |
+| Row count             | `.table-row-count`                    |
+| Aggregation bar       | `.table-aggregation-bar`              |
+| Table cell navigation | `td[data-nav-row][data-nav-col]`      |
 
 ## Requirements-Driven Development Workflow
 
 ### Tests ARE Requirements
+
 Each E2E test is a named product requirement. The test suite is the single source of truth for "what the product should do." Test names describe user-facing behavior, not code internals.
 
 ### Development Loop — MANDATORY (never skip steps)
@@ -127,6 +133,7 @@ Each E2E test is a named product requirement. The test suite is the single sourc
    - Whether the change was additive or required trade-offs
 
 ### Requirement Change Rules
+
 - **Never silently modify a test** to make it pass. If a test must change, log the reason in `REQUIREMENTS_LOG.md`.
 - A failing OLD test means either: (a) you introduced a regression → fix the code, or (b) the requirement genuinely changed → document WHY
 - **Never commit a fix without a corresponding test.** If you cannot write a test for the change, explain why in `REQUIREMENTS_LOG.md` before proceeding.
@@ -134,11 +141,13 @@ Each E2E test is a named product requirement. The test suite is the single sourc
 ## Testing
 
 ### Unit Tests (Vitest + jsdom)
+
 - Location: `tests/unit/`, `tests/integration/`
 - Run: `npm test` or `npm run test:coverage`
 - Coverage thresholds: 60% overall, 80% for core modules
 
 ### E2E Tests (Playwright)
+
 - Location: `e2e/`
 - Run: `npx playwright test` or `npx playwright test --project=chromium`
 - **IMPORTANT: Tests must only run against localhost (http://localhost:5173). NEVER test against the deployed GitHub Pages site** (`https://maxfrost1308.github.io/card-maker/`) as it is used for visual testing on different branches.
@@ -146,18 +155,19 @@ Each E2E test is a named product requirement. The test suite is the single sourc
 - Fixtures: `e2e/fixtures/` (CSV test data)
 
 ### Test File Organization (by product area)
-| File | Area |
-|------|------|
-| `01-card-type-panel.spec.js` | Card type selection, CSV upload, custom types |
-| `02-top-panel.spec.js` | Cards/Table toggle, overlay, add card, save, export, print, dark mode |
-| `03-sub-header-panel.spec.js` | Search, column filters, aggregation stats, column selector |
-| `04-cards-view.spec.js` | Card rendering, fronts & backs, empty state, large datasets |
-| `05-table-view.spec.js` | Table headers, sorting, bulk selection, cell rendering per data type |
-| `06-table-cell-editing.spec.js` | Inline editing for each data type, keyboard nav, undo/redo |
-| `07-editing-modal.spec.js` | Edit modal: open/close, navigation, field editing, save, duplicate, verification |
-| `08-export-persistence.spec.js` | Deck export/import, CSV downloads, IndexedDB session persistence |
-| `09-accessibility.spec.js` | AXE-core scans, focus management, ARIA, keyboard shortcuts, contrast |
-| `10-edge-cases.spec.js` | CSV edge cases, XSS sanitization, card type switching |
+
+| File                            | Area                                                                             |
+| ------------------------------- | -------------------------------------------------------------------------------- |
+| `01-card-type-panel.spec.js`    | Card type selection, CSV upload, custom types                                    |
+| `02-top-panel.spec.js`          | Cards/Table toggle, overlay, add card, save, export, print, dark mode            |
+| `03-sub-header-panel.spec.js`   | Search, column filters, aggregation stats, column selector                       |
+| `04-cards-view.spec.js`         | Card rendering, fronts & backs, empty state, large datasets                      |
+| `05-table-view.spec.js`         | Table headers, sorting, bulk selection, cell rendering per data type             |
+| `06-table-cell-editing.spec.js` | Inline editing for each data type, keyboard nav, undo/redo                       |
+| `07-editing-modal.spec.js`      | Edit modal: open/close, navigation, field editing, save, duplicate, verification |
+| `08-export-persistence.spec.js` | Deck export/import, CSV downloads, IndexedDB session persistence                 |
+| `09-accessibility.spec.js`      | AXE-core scans, focus management, ARIA, keyboard shortcuts, contrast             |
+| `10-edge-cases.spec.js`         | CSV edge cases, XSS sanitization, card type switching                            |
 
 ## Common Commands
 
