@@ -23,7 +23,9 @@ let _getActiveCardTypeFn = null;
  * Get the current data array.
  * @returns {Object[]|null}
  */
-export function getData() { return _data; }
+export function getData() {
+  return _data;
+}
 
 /**
  * Replace the entire data array and schedule a session auto-save.
@@ -41,7 +43,9 @@ function _scheduleSave() {
     try {
       const { saveSession } = await import('./storage.js');
       await saveSession();
-    } catch { /* storage may not be available in tests */ }
+    } catch {
+      /* storage may not be available in tests */
+    }
   }, 1000); // debounce: save 1s after last mutation
 }
 
@@ -70,13 +74,17 @@ export function deleteRows(indices) {
  * Register the view rerender function (called once by ui.js during init).
  * @param {function(Object=, Object[]=): Promise<void>} fn
  */
-export function registerRerenderFn(fn) { _rerenderFn = fn; }
+export function registerRerenderFn(fn) {
+  _rerenderFn = fn;
+}
 
 /**
  * Register the active card type getter (called once by ui.js during init).
  * @param {function(): Object|null} fn
  */
-export function registerGetActiveCardTypeFn(fn) { _getActiveCardTypeFn = fn; }
+export function registerGetActiveCardTypeFn(fn) {
+  _getActiveCardTypeFn = fn;
+}
 
 // ── Shared accessors (used by table-view and edit-view) ──────────────────────
 

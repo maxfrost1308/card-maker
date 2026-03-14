@@ -16,9 +16,21 @@
 
 // Predefined palette for hash-based tag colors
 const TAG_COLORS = [
-  '#6a4c93', '#2e86ab', '#c44569', '#5b7553', '#e07b00',
-  '#8b1a1a', '#3c3c6e', '#b8560b', '#d4a017', '#34495e',
-  '#7a5195', '#8b7355', '#e91e63', '#6b4c8a', '#7bb369',
+  '#6a4c93',
+  '#2e86ab',
+  '#c44569',
+  '#5b7553',
+  '#e07b00',
+  '#8b1a1a',
+  '#3c3c6e',
+  '#b8560b',
+  '#d4a017',
+  '#34495e',
+  '#7a5195',
+  '#8b7355',
+  '#e91e63',
+  '#6b4c8a',
+  '#7bb369',
 ];
 
 /**
@@ -85,10 +97,14 @@ export function createTagPicker(field, selectedValues, onChange, allRows) {
     for (const row of allRows) {
       const val = row[field.key];
       if (val && typeof val === 'string') {
-        val.split(sep).map(v => v.trim()).filter(Boolean).forEach(v => optSet.add(v));
+        val
+          .split(sep)
+          .map((v) => v.trim())
+          .filter(Boolean)
+          .forEach((v) => optSet.add(v));
       }
     }
-    selectedValues.forEach(v => optSet.add(v));
+    selectedValues.forEach((v) => optSet.add(v));
     options = [...optSet].sort();
   }
 
@@ -132,7 +148,7 @@ export function createTagPicker(field, selectedValues, onChange, allRows) {
       removeBtn.setAttribute('aria-label', `Remove ${val}`);
       removeBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        wrapper._selectedValues = wrapper._selectedValues.filter(v => v !== val);
+        wrapper._selectedValues = wrapper._selectedValues.filter((v) => v !== val);
         renderTags();
         renderDropdown();
         onChange(wrapper._selectedValues);
@@ -156,16 +172,16 @@ export function createTagPicker(field, selectedValues, onChange, allRows) {
   function renderDropdown() {
     dropdown.innerHTML = '';
     const q = input.value.toLowerCase().trim();
-    const available = options.filter(opt =>
-      !wrapper._selectedValues.includes(opt) &&
-      (!q || opt.toLowerCase().includes(q))
+    const available = options.filter(
+      (opt) => !wrapper._selectedValues.includes(opt) && (!q || opt.toLowerCase().includes(q)),
     );
 
     // For tags type: "Create <value>" option when typed value is new
     if (
-      field.type === 'tags' && q &&
-      !options.some(o => o.toLowerCase() === q) &&
-      !wrapper._selectedValues.some(v => v.toLowerCase() === q)
+      field.type === 'tags' &&
+      q &&
+      !options.some((o) => o.toLowerCase() === q) &&
+      !wrapper._selectedValues.some((v) => v.toLowerCase() === q)
     ) {
       const createBtn = document.createElement('button');
       createBtn.className = 'tag-picker-option tag-picker-create';
@@ -207,13 +223,30 @@ export function createTagPicker(field, selectedValues, onChange, allRows) {
     }
   }
 
-  input.addEventListener('focus', () => { renderDropdown(); dropdown.hidden = false; });
-  input.addEventListener('input', () => { renderDropdown(); dropdown.hidden = false; });
-  input.addEventListener('blur', () => { setTimeout(() => { dropdown.hidden = true; }, 150); });
+  input.addEventListener('focus', () => {
+    renderDropdown();
+    dropdown.hidden = false;
+  });
+  input.addEventListener('input', () => {
+    renderDropdown();
+    dropdown.hidden = false;
+  });
+  input.addEventListener('blur', () => {
+    setTimeout(() => {
+      dropdown.hidden = true;
+    }, 150);
+  });
   input.addEventListener('keydown', (e) => {
     e.stopPropagation();
-    if (e.key === 'Enter') { e.preventDefault(); const val = input.value.trim(); if (val) addValue(val); }
-    if (e.key === 'Escape') { dropdown.hidden = true; input.blur(); }
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const val = input.value.trim();
+      if (val) addValue(val);
+    }
+    if (e.key === 'Escape') {
+      dropdown.hidden = true;
+      input.blur();
+    }
   });
 
   renderTags();
@@ -262,7 +295,7 @@ export function createPillPicker(field, selectedValues, onChange) {
           wrapper._selectedValues = wrapper._selectedValues.includes(opt) ? [] : [opt];
         } else {
           if (wrapper._selectedValues.includes(opt)) {
-            wrapper._selectedValues = wrapper._selectedValues.filter(v => v !== opt);
+            wrapper._selectedValues = wrapper._selectedValues.filter((v) => v !== opt);
           } else {
             wrapper._selectedValues.push(opt);
           }

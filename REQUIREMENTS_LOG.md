@@ -29,3 +29,4 @@ See `CLAUDE.md` for the development workflow that uses this log.
 | Date | Spec File | Requirement | Action | Justification |
 |------|-----------|-------------|--------|---------------|
 | 2026-03-14 | all | — | Created | Initial requirements baseline from product experience analysis |
+| 2026-03-14 | `03-sub-header-panel.spec.js` | filter bar stays above table header when scrolled | Added | `.table-controls` (z-index: 10) was rendered below `.data-table th` (z-index: 20) when both sticky at top:0 during scroll. New test verifies controls bar z-index exceeds header z-index. |

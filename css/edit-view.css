@@ -115,9 +115,9 @@
   margin-bottom: 4px;
 }
 
-.edit-field input[type="text"],
-.edit-field input[type="url"],
-.edit-field input[type="number"],
+.edit-field input[type='text'],
+.edit-field input[type='url'],
+.edit-field input[type='number'],
 .edit-field select {
   width: 100%;
   padding: 6px 10px;
@@ -139,5 +139,7 @@
 }
 
 @media print {
-  .edit-modal { display: none !important; }
+  .edit-modal {
+    display: none !important;
+  }
 }

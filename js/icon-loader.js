@@ -11,11 +11,11 @@
  *  - Provides a preload function to batch-fetch unique icons before render
  */
 
-const svgCache = new Map();       // iconName → SVG string (inline-ready)
+const svgCache = new Map(); // iconName → SVG string (inline-ready)
 const pendingFetches = new Map(); // iconName → Promise<string>
 const MAX_CONCURRENT = 4;
 let activeCount = 0;
-const queue = [];                 // { resolve, reject, url, key }
+const queue = []; // { resolve, reject, url, key }
 
 /**
  * Resolve a game-icons.net icon name to a full URL.
@@ -53,7 +53,10 @@ export function resolveIconUrl(nameOrUrl, fgColor = '000000', bgColor = 'ffffff'
  * Normalize an icon reference to a cache key.
  */
 function cacheKey(nameOrUrl) {
-  return nameOrUrl.trim().toLowerCase().replace(/\.svg$/, '');
+  return nameOrUrl
+    .trim()
+    .toLowerCase()
+    .replace(/\.svg$/, '');
 }
 
 /**
@@ -109,7 +112,10 @@ async function doFetch({ url, key, resolve }) {
     let svg = await res.text();
 
     // Strip XML declaration and doctype if present
-    svg = svg.replace(/<\?xml[^>]*\?>/gi, '').replace(/<!DOCTYPE[^>]*>/gi, '').trim();
+    svg = svg
+      .replace(/<\?xml[^>]*\?>/gi, '')
+      .replace(/<!DOCTYPE[^>]*>/gi, '')
+      .trim();
 
     // Strip the game-icons.net background rectangle (may have fill or other attrs)
     svg = svg.replace(/<path[^>]*d="M0 0h512v512H0z"[^>]*\/?>/, '');
@@ -149,8 +155,8 @@ function makeFallbackSvg(key) {
  * Use this before rendering many cards to avoid waterfall requests.
  */
 export async function preloadIcons(names) {
-  const unique = [...new Set(names.filter(Boolean).map(n => n.trim()))];
-  await Promise.all(unique.map(n => fetchIcon(n)));
+  const unique = [...new Set(names.filter(Boolean).map((n) => n.trim()))];
+  await Promise.all(unique.map((n) => fetchIcon(n)));
 }
 
 /**

@@ -18,5 +18,7 @@ export function showToast(msg, type = 'info', duration = 4000) {
   toastEl.className = 'toast' + (type !== 'info' ? ` toast-${type}` : '');
   toastEl.hidden = false;
   clearTimeout(toastEl._timeout);
-  toastEl._timeout = setTimeout(() => { toastEl.hidden = true; }, duration);
+  toastEl._timeout = setTimeout(() => {
+    toastEl.hidden = true;
+  }, duration);
 }
