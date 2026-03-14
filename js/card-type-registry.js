@@ -15,7 +15,7 @@
  */
 
 const registry = new Map();
-let injectedStyles = new Map(); // id → <style> element
+const injectedStyles = new Map(); // id → <style> element
 
 /**
  * Register a built-in card type by loading its files from card-types/<id>/.
@@ -100,11 +100,6 @@ export async function registerFromUpload(schemaFile, frontFile, backFile, cssFil
 
   if (!frontTemplate.trim()) throw new Error('Front template cannot be empty.');
 
-  // Warn about <script> tags in templates (not blocked — user may have a reason)
-  if (/<script/i.test(frontTemplate) || (backTemplate && /<script/i.test(backTemplate))) {
-    console.warn('[card-maker] Custom card type templates contain <script> tags. Only upload templates from trusted sources.');
-  }
-
   const cardType = {
     id: schema.id,
     name: schema.name,
@@ -113,8 +108,8 @@ export async function registerFromUpload(schemaFile, frontFile, backFile, cssFil
     fields: schema.fields,
     colorMapping: schema.colorMapping || null,
     aggregations: schema.aggregations || null,
-    frontTemplate,
-    backTemplate,
+    frontTemplate: sanitizeTemplate(frontTemplate),
+    backTemplate: backTemplate ? sanitizeTemplate(backTemplate) : null,
     css,
     sampleData: null,
     _sanitizeCss: true, // flag: sanitize CSS on injection (user-supplied)
@@ -149,10 +144,6 @@ export async function registerFromBundle(bundle) {
     }
   }
 
-  if (/<script/i.test(bundle.frontTemplate) || (bundle.backTemplate && /<script/i.test(bundle.backTemplate))) {
-    console.warn('[card-maker] Bundle templates contain <script> tags. Only load bundles from trusted sources.');
-  }
-
   const cardType = {
     id: bundle.id,
     name: bundle.name,
@@ -161,8 +152,8 @@ export async function registerFromBundle(bundle) {
     fields: bundle.fields,
     colorMapping: bundle.colorMapping || null,
     aggregations: bundle.aggregations || null,
-    frontTemplate: bundle.frontTemplate,
-    backTemplate: bundle.backTemplate || null,
+    frontTemplate: sanitizeTemplate(bundle.frontTemplate),
+    backTemplate: bundle.backTemplate ? sanitizeTemplate(bundle.backTemplate) : null,
     css: bundle.styles || bundle.css || '',
     sampleData: bundle.sampleData || null,
     _sanitizeCss: true,
@@ -173,16 +164,45 @@ export async function registerFromBundle(bundle) {
 }
 
 /**
- * Sanitize user-supplied CSS to prevent external resource loading.
- * Strips @import rules and url() references to external (non-data:) sources.
+ * Sanitize user-supplied HTML templates.
+ * Strips <script> tags, event handler attributes (onclick, onerror, etc.),
+ * and javascript:/vbscript: URLs in href/src attributes.
+ * @param {string} html
+ * @returns {string}
+ */
+function sanitizeTemplate(html) {
+  // Remove <script> tags and their contents
+  let sanitized = html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '<!-- script removed -->');
+  // Remove self-closing <script> tags
+  sanitized = sanitized.replace(/<script\b[^>]*\/?>/gi, '<!-- script removed -->');
+  // Remove all on* event handler attributes (onclick, onerror, onload, etc.)
+  sanitized = sanitized.replace(/\s+on\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '');
+  // Remove javascript: and vbscript: URLs in href/src/action attributes
+  sanitized = sanitized.replace(/(href|src|action)\s*=\s*(?:"javascript:[^"]*"|'javascript:[^']*')/gi, '$1="about:blank"');
+  sanitized = sanitized.replace(/(href|src|action)\s*=\s*(?:"vbscript:[^"]*"|'vbscript:[^']*')/gi, '$1="about:blank"');
+  return sanitized;
+}
+
+/**
+ * Sanitize user-supplied CSS to prevent external resource loading and script execution.
+ * Strips @import rules, url() references to external/javascript sources, and
+ * legacy IE expression()/behavior properties.
  * @param {string} css
  * @returns {string}
  */
 function sanitizeCss(css) {
   // Remove @import rules entirely
-  let sanitized = css.replace(/@import\b[^;]+;/gi, '/* @import removed */');
+  let sanitized = css.replace(/@import\b[^;]+;/gi, '/* removed */');
   // Strip url() references that point to external URLs (allow data: and relative paths)
-  sanitized = sanitized.replace(/url\(\s*(['"]?)(https?:\/\/[^)'"]+)\1\s*\)/gi, 'url(/* external url removed */)');
+  sanitized = sanitized.replace(/url\(\s*(['"]?)(https?:\/\/[^)'"]+)\1\s*\)/gi, 'url(/* removed */)');
+  // Strip javascript: and vbscript: URLs in url()
+  sanitized = sanitized.replace(/url\(\s*"?\s*javascript:[^)"]*"?\s*\)/gi, 'url(/* removed */)');
+  sanitized = sanitized.replace(/url\(\s*'?\s*javascript:[^)']*'?\s*\)/gi, 'url(/* removed */)');
+  sanitized = sanitized.replace(/url\(\s*"?\s*vbscript:[^)"]*"?\s*\)/gi, 'url(/* removed */)');
+  sanitized = sanitized.replace(/url\(\s*'?\s*vbscript:[^)']*'?\s*\)/gi, 'url(/* removed */)');
+  // Remove IE expression() and behavior properties
+  sanitized = sanitized.replace(/expression\s*\([^)]*\)/gi, '/* expression removed */');
+  sanitized = sanitized.replace(/behavior\s*:\s*url\([^)]*\)/gi, '/* behavior removed */');
   return sanitized;
 }
 

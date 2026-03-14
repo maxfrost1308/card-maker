@@ -17,4 +17,19 @@ export default [
       'prefer-const': 'warn',
     },
   },
+  {
+    files: ['sw.js'],
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: 'script',
+      globals: {
+        ...globals.serviceworker,
+      },
+    },
+    rules: {
+      'no-unused-vars': 'warn',
+      'no-undef': 'error',
+      'prefer-const': 'warn',
+    },
+  },
 ];

@@ -27,8 +27,9 @@ let sortState = { key: null, dir: 'asc' };
 let columnFilters = {};  // string for text fields, Set for select/multi-select
 let globalFilter = '';
 let debounceTimer = null;
-let selectedIndices = new Set();
+const selectedIndices = new Set();
 let visibleColumns = null; // Set of field keys to show; null = use defaults
+let _abortController = null; // for cleaning up document-level listeners on re-render
 
 // Module-level DOM refs set during renderTable
 let bulkBar = null;
@@ -60,6 +61,11 @@ function getVisibleFields() {
  * Render the full table view into #table-view.
  */
 export function renderTable(cardType, rows) {
+  // Abort previous document-level listeners to prevent accumulation
+  if (_abortController) _abortController.abort();
+  _abortController = new AbortController();
+  const signal = _abortController.signal;
+
   container = document.getElementById('table-view');
   currentCardType = cardType;
   currentRows = rows;
@@ -131,7 +137,7 @@ export function renderTable(cardType, rows) {
   });
   document.addEventListener('click', (e) => {
     if (!colBtnWrap.contains(e.target)) colDropdown.hidden = true;
-  });
+  }, { signal });
   controls.appendChild(colBtnWrap);
 
   const rowCount = document.createElement('span');
@@ -235,6 +241,9 @@ function rebuildTable() {
     const th = document.createElement('th');
     th.textContent = field.label || field.key;
     th.dataset.key = field.key;
+    th.setAttribute('aria-sort', sortState.key === field.key
+      ? (sortState.dir === 'asc' ? 'ascending' : 'descending')
+      : 'none');
     if (sortState.key === field.key) {
       th.classList.add('sorted', sortState.dir);
     }
@@ -247,7 +256,11 @@ function rebuildTable() {
       }
       headerRow.querySelectorAll('th[data-key]').forEach(h => {
         h.classList.remove('sorted', 'asc', 'desc');
-        if (h.dataset.key === sortState.key) {
+        const isSorted = h.dataset.key === sortState.key;
+        h.setAttribute('aria-sort', isSorted
+          ? (sortState.dir === 'asc' ? 'ascending' : 'descending')
+          : 'none');
+        if (isSorted) {
           h.classList.add('sorted', sortState.dir);
         }
       });
@@ -326,7 +339,7 @@ function buildFilterBar(fields) {
 
   document.addEventListener('click', (e) => {
     if (!bar.contains(e.target)) dropdown.hidden = true;
-  });
+  }, { signal: _abortController?.signal });
 
   renderFilterTokens();
   return bar;
@@ -410,6 +423,7 @@ function showValueStep(dropdown, field, fields) {
       cb.type = 'checkbox';
       cb.value = opt;
       cb.checked = filterSet instanceof Set && filterSet.has(opt);
+      cb.setAttribute('aria-label', `Filter by ${field.label || field.key}: ${opt}`);
       cb.addEventListener('change', () => {
         if (!columnFilters[field.key] || !(columnFilters[field.key] instanceof Set)) {
           columnFilters[field.key] = new Set();
@@ -703,16 +717,17 @@ function cancelCellEdit(td, rowIdx, field) {
   renderCellContent(td, currentRows[rowIdx][field.key] || '', field);
 }
 
-// ===== Rebuild tbody =====
+// ===== Shared filter/sort logic =====
 
-function rebuildTbody() {
-  if (activeEditCell) commitCellEdit();
-
-  const fields = fieldsRef;
-  const vFields = getVisibleFields();
-  const rows = currentRows;
-  const tbody = tbodyRef;
-
+/**
+ * Apply column filters, global filter, and sort to produce a filtered index array.
+ * Consistent ordering: column filters → global filter → sort.
+ *
+ * @param {Object[]} rows - All data rows
+ * @param {Object[]} fields - Schema field definitions
+ * @returns {number[]} Filtered and sorted row indices
+ */
+function _applyFiltersAndSort(rows, fields) {
   let indices = rows.map((_, i) => i);
 
   // Column filters
@@ -766,6 +781,21 @@ function rebuildTbody() {
       return sortState.dir === 'desc' ? -cmp : cmp;
     });
   }
+
+  return indices;
+}
+
+// ===== Rebuild tbody =====
+
+function rebuildTbody() {
+  if (activeEditCell) commitCellEdit();
+
+  const fields = fieldsRef;
+  const vFields = getVisibleFields();
+  const rows = currentRows;
+  const tbody = tbodyRef;
+
+  const indices = _applyFiltersAndSort(rows, fields);
 
   // Build rows
   tbody.innerHTML = '';
@@ -897,7 +927,7 @@ function updateAggregationBar(visibleIndices) {
 }
 
 /**
- * Return the filtered & sorted row indices (same logic as rebuildTbody).
+ * Return the filtered & sorted row indices using the shared filter/sort helper.
  * Returns null when no filters/sort are active (i.e. all rows, natural order).
  */
 export function getFilteredIndices() {
@@ -908,65 +938,11 @@ export function getFilteredIndices() {
   const hasSorting = !!sortState.key;
   if (!hasFilters && !hasSorting) return null;
 
-  const fields = fieldsRef;
-  const rows = currentRows;
-  let indices = rows.map((_, i) => i);
-
-  // Column filters
-  indices = indices.filter(i => {
-    for (const field of fields) {
-      const filterVal = columnFilters[field.key];
-      if (!filterVal) continue;
-      if (filterVal instanceof Set) {
-        if (filterVal.size === 0) continue;
-        const cellVal = String(rows[i][field.key] || '');
-        if (field.type === 'multi-select' || field.type === 'tags') {
-          const sep = field.separator || '|';
-          const cellOptions = cellVal.split(sep).map(v => v.trim());
-          if (!cellOptions.some(v => filterVal.has(v))) return false;
-        } else {
-          if (!filterVal.has(cellVal)) return false;
-        }
-      } else {
-        const cellVal = String(rows[i][field.key] || '').toLowerCase();
-        if (!cellVal.includes(filterVal.toLowerCase())) return false;
-      }
-    }
-    return true;
-  });
-
-  // Sort
-  if (sortState.key) {
-    const key = sortState.key;
-    const field = fields.find(f => f.key === key);
-    const isNumber = field && field.type === 'number';
-    indices.sort((a, b) => {
-      const va = rows[a][key] || '';
-      const vb = rows[b][key] || '';
-      let cmp;
-      if (isNumber) {
-        cmp = (parseFloat(va) || 0) - (parseFloat(vb) || 0);
-      } else {
-        cmp = String(va).localeCompare(String(vb));
-      }
-      return sortState.dir === 'desc' ? -cmp : cmp;
-    });
-  }
-
-  // Global filter
-  if (globalFilter) {
-    const gf = globalFilter.toLowerCase();
-    indices = indices.filter(i => {
-      return fields.some(field => {
-        return String(rows[i][field.key] || '').toLowerCase().includes(gf);
-      });
-    });
-  }
-
-  return indices;
+  return _applyFiltersAndSort(currentRows, fieldsRef);
 }
 
 export function destroyTable() {
+  if (_abortController) { _abortController.abort(); _abortController = null; }
   if (container) container.innerHTML = '';
   sortState = { key: null, dir: 'asc' };
   columnFilters = {};

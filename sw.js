@@ -3,7 +3,7 @@
  * Card type data (card-types/) is served network-first to stay fresh.
  */
 
-const CACHE = 'card-maker-v2';
+const CACHE = 'card-maker-v3';
 
 const APP_SHELL = [
   '/',
@@ -31,6 +31,8 @@ const APP_SHELL = [
   '/js/print-layout.js',
   '/js/icon-loader.js',
   '/js/starter-files.js',
+  '/js/deck-filter.js',
+  '/js/virtual-scroll.js',
   '/lib/papaparse.min.js',
 ];
 
@@ -54,9 +56,18 @@ self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
 
   // Network-first for card type files (stays fresh)
-  if (url.pathname.startsWith('/card-types/')) {
+  if (url.pathname.includes('/card-types/')) {
     e.respondWith(
-      fetch(e.request).catch(() => caches.match(e.request))
+      fetch(e.request)
+        .then(res => {
+          // Cache successful network responses for offline fallback
+          if (res.ok) {
+            const clone = res.clone();
+            caches.open(CACHE).then(cache => cache.put(e.request, clone));
+          }
+          return res;
+        })
+        .catch(() => caches.match(e.request))
     );
     return;
   }

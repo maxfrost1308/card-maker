@@ -56,4 +56,9 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js').catch(err => {
     console.warn('[card-maker] SW registration failed:', err.message);
   });
+
+  // Notify user when a new version is available
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    showToast('App updated — reload for the latest version.', 'info', 8000);
+  });
 }

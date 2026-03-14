@@ -24,11 +24,7 @@ export function parseCsv(input) {
       }
     };
 
-    if (typeof input === 'string') {
-      Papa.parse(input, config);
-    } else {
-      Papa.parse(input, config);
-    }
+    Papa.parse(input, config);
   });
 }
 
