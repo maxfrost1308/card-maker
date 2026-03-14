@@ -93,12 +93,12 @@ Each E2E test is a named product requirement. The test suite is the single sourc
 
 ### Development Loop — MANDATORY (never skip steps)
 
-**CRITICAL: You MUST NOT write or commit any code fix before completing steps 1–3. This is a hard gate, not a suggestion.**
+**CRITICAL: You MUST NOT read, investigate, or modify any source code (non-test files) before completing steps 1–3. This is a hard gate, not a suggestion. Do NOT open source files to "understand the bug" — the test must come first.**
 
 1. **Receive task** — feature request, bug report, or refactor
-2. **Identify the test gap FIRST** — before touching any source code, find which E2E or unit test *should* catch this issue but doesn't. Check the relevant spec file(s) from the test file table below. Ask: "If this bug existed, would any existing test fail?" If the answer is no, there is a missing requirement.
-3. **Write the failing test** — add or modify the test that describes the desired behavior. Run it and **confirm it fails** (red). If it already passes, your test isn't testing the right thing — revise it. Do NOT proceed until you have a genuinely failing test.
-4. **Make code changes** — implement the fix/feature until the new test passes (green).
+2. **Identify the test gap FIRST** — Do NOT read or explore source code yet. Based solely on the task description and the test file table below, determine which spec file covers this area. Read that spec file to understand existing coverage. Ask: "If this bug existed, would any existing test fail?" If the answer is no, there is a missing requirement. You may ONLY read test files, fixture files, and helper files during this step — never application source code.
+3. **Write the failing test** — add or modify the test that describes the desired behavior. Run it and **confirm it fails** (red). If it already passes, your test isn't testing the right thing — revise it. Do NOT proceed until you have a genuinely failing test. You still must not have read any source code at this point.
+4. **Make code changes** — NOW you may read source code. Investigate the root cause and implement the fix/feature until the new test passes (green).
 5. **Run the full suite** — ensure ALL requirements (old + new) pass. Fix any regressions before proceeding.
 6. **Report** — document in `REQUIREMENTS_LOG.md`:
    - Any existing requirements that had to be modified (with justification)
