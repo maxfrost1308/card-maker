@@ -28,7 +28,7 @@ import { preloadIcons } from './icon-loader.js';
 import { createFocusTrap } from './focus-trap.js';
 import { setData, getData, registerRerenderFn, registerGetActiveCardTypeFn } from './state.js';
 import { createVirtualGrid, VS_THRESHOLD } from './virtual-scroll.js';
-import { getQuery, initDeckBar, updateDeckBar } from './deck-filter.js';
+import { getQuery } from './deck-filter.js';
 import { showToast } from './toast.js';
 import {
   hasFSAPI, openCsvWithPicker, loadCsvFile, saveToFile,
@@ -86,10 +86,13 @@ export async function rerenderActiveView(cardType, rows) {
   if (!rows) rows = getData() || cardType?.sampleData;
   if (!cardType || !rows) return;
 
-  updateDeckBar();
   // Show Add Card button only when real (non-sample) data is loaded
   const addBtn = document.getElementById('add-card-btn');
   if (addBtn) addBtn.hidden = !getData();
+
+  // Show card-toolbar only in cards view when data is loaded
+  const cardToolbar = document.getElementById('card-toolbar');
+  if (cardToolbar) cardToolbar.hidden = activeView !== 'cards';
 
   if (activeView === 'table') {
     renderTable(cardType, rows);
@@ -455,9 +458,7 @@ export function bindEvents() {
     }
     if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
       e.preventDefault();
-      const target = activeView === 'table'
-        ? document.querySelector('.table-global-filter')
-        : document.getElementById('shared-search');
+      const target = document.querySelector('.table-global-filter');
       target?.focus(); target?.select?.();
       return;
     }
@@ -474,6 +475,9 @@ export function bindEvents() {
   // View toggle (Cards / Table)
   const viewBtns = document.querySelectorAll('.view-btn');
   const tableViewEl = document.getElementById('table-view');
+  const tableControlsEl = document.getElementById('table-controls');
+  const tableAggBarEl = document.getElementById('table-aggregation-bar');
+  const cardToolbarEl = document.getElementById('card-toolbar');
   viewBtns.forEach(btn => {
     btn.addEventListener('click', () => {
       const view = btn.dataset.view;
@@ -482,6 +486,11 @@ export function bindEvents() {
       viewBtns.forEach(b => b.classList.toggle('active', b.dataset.view === view));
       cardGrid.hidden = view !== 'cards';
       tableViewEl.hidden = view !== 'table';
+      if (view !== 'table') {
+        if (tableControlsEl) tableControlsEl.hidden = true;
+        if (tableAggBarEl) tableAggBarEl.hidden = true;
+      }
+      if (cardToolbarEl) cardToolbarEl.hidden = view !== 'cards';
       const ct = getActiveCardType();
       const data = getData() || ct?.sampleData;
       if (ct && data) rerenderActiveView(ct, data);
@@ -645,13 +654,6 @@ export function bindEvents() {
       colorMapping: ct.colorMapping || {},
     };
     downloadFile(`${ct.id}-bundle.json`, JSON.stringify(bundle, null, 2), 'application/json');
-  });
-
-  // Shared deck filter bar (REQ-065, shared between card + table views)
-  initDeckBar(() => {
-    const ct = getActiveCardType();
-    const data = getData() || ct?.sampleData;
-    if (ct && data) rerenderActiveView(ct, data);
   });
 
   // Drag-and-drop CSV (REQ-050)

@@ -79,9 +79,10 @@ export function renderTable(cardType, rows) {
     visibleColumns = new Set(fields.filter(f => !f.hidden).map(f => f.key));
   }
 
-  // Controls bar
-  const controls = document.createElement('div');
-  controls.className = 'table-controls';
+  // Controls bar — use the top-level #table-controls element
+  const controls = document.getElementById('table-controls');
+  controls.innerHTML = '';
+  controls.hidden = false;
 
   const globalInput = document.createElement('input');
   globalInput.type = 'text';
@@ -168,16 +169,16 @@ export function renderTable(cardType, rows) {
   bulkBar.appendChild(deleteBtn);
 
   controls.appendChild(bulkBar);
-  container.appendChild(controls);
 
-  // Aggregation bar
+  // Aggregation bar — use the top-level #table-aggregation-bar element
+  const aggBarEl = document.getElementById('table-aggregation-bar');
+  aggBarEl.innerHTML = '';
   if (cardType.aggregations && cardType.aggregations.length > 0) {
-    const aggBar = document.createElement('div');
-    aggBar.className = 'table-aggregation-bar';
-    aggregationBarRef = aggBar;
-    container.appendChild(aggBar);
+    aggregationBarRef = aggBarEl;
+    aggBarEl.hidden = false;
   } else {
     aggregationBarRef = null;
+    aggBarEl.hidden = true;
   }
 
   // Table
@@ -944,6 +945,10 @@ export function getFilteredIndices() {
 export function destroyTable() {
   if (_abortController) { _abortController.abort(); _abortController = null; }
   if (container) container.innerHTML = '';
+  const topControls = document.getElementById('table-controls');
+  if (topControls) { topControls.innerHTML = ''; topControls.hidden = true; }
+  const topAggBar = document.getElementById('table-aggregation-bar');
+  if (topAggBar) { topAggBar.innerHTML = ''; topAggBar.hidden = true; }
   sortState = { key: null, dir: 'asc' };
   columnFilters = {};
   globalFilter = '';
