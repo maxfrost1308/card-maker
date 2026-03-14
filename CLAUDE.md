@@ -30,6 +30,27 @@ qr-code.js          → QR code SVG generation
 icon-loader.js      → game-icons.net SVG icon preloading
 ```
 
+### CSS Files
+
+```
+css/app.css          → Global layout, sidebar, header, cards, dark mode
+css/table-view.css   → Table, filter bar, column prefs, inline editing, pills
+css/edit-view.css    → Edit modal and bulk edit modal
+css/print.css        → Print layout overrides
+```
+
+### Z-Index Layers
+
+Several elements use `position: sticky` or `position: absolute`. This table tracks
+the stacking order to prevent overlap bugs.
+
+| Layer | Z-Index | Element | Position | Notes |
+|-------|---------|---------|----------|-------|
+| Table header | 20 | `.data-table th` | sticky, top: 0 | Column headers stick on scroll |
+| Controls bar | 30 | `.table-controls` | sticky, top: 0 | Must be above table header |
+| Dropdowns | 50 | `.filter-bar-dropdown`, `.col-prefs-dropdown`, `.tag-picker-dropdown` | absolute | Positioned from parent |
+| Modals | — | `#edit-modal`, `#bulk-edit-modal` | fixed | Full-screen overlays via `hidden` attr |
+
 **Circular dependency avoidance:** `state.js` provides accessor functions (`getData`, `setRowData`, `rerenderActiveView`) so that `table-view.js` and `edit-view.js` don't import from `ui.js`.
 
 ## Key Concepts
