@@ -234,4 +234,22 @@ test.describe("Sub Header Panel", () => {
       expect(headerTexts.some((h) => h.includes("Botanical"))).toBeTruthy();
     });
   });
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Filter Bar Positioning
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  test.describe("Filter Bar Positioning", () => {
+    test("filter bar controls render above table header (higher z-index)", async ({ page }) => {
+      await loadPlantCards(page);
+      await switchToTable(page);
+      const controlsZ = await page.locator(".table-controls").evaluate((el) => {
+        return parseInt(window.getComputedStyle(el).zIndex, 10);
+      });
+      const thZ = await page.locator(".data-table th").first().evaluate((el) => {
+        return parseInt(window.getComputedStyle(el).zIndex, 10);
+      });
+      expect(controlsZ).toBeGreaterThan(thZ);
+    });
+  });
 });

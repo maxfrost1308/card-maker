@@ -29,3 +29,4 @@ See `CLAUDE.md` for the development workflow that uses this log.
 | Date | Spec File | Requirement | Action | Justification |
 |------|-----------|-------------|--------|---------------|
 | 2026-03-14 | all | — | Created | Initial requirements baseline from product experience analysis |
+| 2026-03-14 | `03-sub-header-panel.spec.js` | filter bar controls render above table header (higher z-index) | Added | New requirement: `.table-controls` z-index must exceed `.data-table th` z-index so filter bar is not obscured by sticky table headers during scroll |
