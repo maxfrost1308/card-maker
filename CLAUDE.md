@@ -91,12 +91,15 @@ JSON schema at `card-types/<id>/card-type.json` with fields, templates, and styl
 ### Tests ARE Requirements
 Each E2E test is a named product requirement. The test suite is the single source of truth for "what the product should do." Test names describe user-facing behavior, not code internals.
 
-### Development Loop
+### Development Loop — MANDATORY (never skip steps)
+
+**CRITICAL: You MUST NOT write or commit any code fix before completing steps 1–3. This is a hard gate, not a suggestion.**
+
 1. **Receive task** — feature request, bug report, or refactor
-2. **Update requirements (tests) FIRST** — write/modify tests that describe the desired behavior
-3. **Run tests** — see which requirements fail (expected for new features; unexpected = regression)
-4. **Make code changes** — implement until all requirements pass
-5. **Iterate** — keep running until ALL requirements (old + new) are satisfied
+2. **Identify the test gap FIRST** — before touching any source code, find which E2E or unit test *should* catch this issue but doesn't. Check the relevant spec file(s) from the test file table below. Ask: "If this bug existed, would any existing test fail?" If the answer is no, there is a missing requirement.
+3. **Write the failing test** — add or modify the test that describes the desired behavior. Run it and **confirm it fails** (red). If it already passes, your test isn't testing the right thing — revise it. Do NOT proceed until you have a genuinely failing test.
+4. **Make code changes** — implement the fix/feature until the new test passes (green).
+5. **Run the full suite** — ensure ALL requirements (old + new) pass. Fix any regressions before proceeding.
 6. **Report** — document in `REQUIREMENTS_LOG.md`:
    - Any existing requirements that had to be modified (with justification)
    - Any new requirements added
@@ -105,7 +108,7 @@ Each E2E test is a named product requirement. The test suite is the single sourc
 ### Requirement Change Rules
 - **Never silently modify a test** to make it pass. If a test must change, log the reason in `REQUIREMENTS_LOG.md`.
 - A failing OLD test means either: (a) you introduced a regression → fix the code, or (b) the requirement genuinely changed → document WHY
-- New tests should be added BEFORE the code change when possible
+- **Never commit a fix without a corresponding test.** If you cannot write a test for the change, explain why in `REQUIREMENTS_LOG.md` before proceeding.
 
 ## Testing
 
