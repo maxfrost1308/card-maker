@@ -217,18 +217,19 @@ test.describe("Sub Header Panel", () => {
       await loadPlantCards(page);
       await switchToTable(page);
       await openColumnSelector(page);
-      const label = page.locator(".col-prefs-label", { hasText: "Botanical" });
-      const cb = label.locator("input[type='checkbox']");
-      await cb.uncheck({ force: true });
-      await page.waitForTimeout(200);
-      // The dropdown stays open (change handler only rebuilds the table).
-      // Re-locate the checkbox since the dropdown contents were re-rendered.
-      const label2 = page.locator(".col-prefs-label", { hasText: "Botanical" });
-      const cb2 = label2.locator("input[type='checkbox']");
-      await cb2.check({ force: true });
+      // Use dispatchEvent to uncheck — on mobile viewports the dropdown
+      // may extend outside the visible area, preventing normal click actions.
+      const cb = page.locator(".col-prefs-label", { hasText: "Botanical" }).locator("input[type='checkbox']");
+      await cb.evaluate((el) => { el.checked = false; el.dispatchEvent(new Event('change')); });
       await page.waitForTimeout(300);
-      const headers = page.locator("thead th");
-      const headerTexts = await headers.allTextContents();
+      // Verify Botanical column is hidden
+      let headerTexts = await page.locator("thead th").allTextContents();
+      expect(headerTexts.some((h) => h.includes("Botanical"))).toBeFalsy();
+      // Re-check to restore the column
+      const cb2 = page.locator(".col-prefs-label", { hasText: "Botanical" }).locator("input[type='checkbox']");
+      await cb2.evaluate((el) => { el.checked = true; el.dispatchEvent(new Event('change')); });
+      await page.waitForTimeout(300);
+      headerTexts = await page.locator("thead th").allTextContents();
       expect(headerTexts.some((h) => h.includes("Botanical"))).toBeTruthy();
     });
   });
