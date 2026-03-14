@@ -34,6 +34,8 @@
     "papaparse": "^5.4.1"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.11.1",
+    "@playwright/test": "^1.58.2",
     "@vitest/coverage-v8": "^2.1.0",
     "eslint": "^9.0.0",
     "globals": "^15.0.0",

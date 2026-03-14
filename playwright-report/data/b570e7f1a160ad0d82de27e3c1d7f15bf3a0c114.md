@@ -1,0 +1,53 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - link "Skip to main content" [ref=e2] [cursor=pointer]:
+    - /url: "#card-grid"
+  - banner [ref=e3]:
+    - heading "Card Maker" [level=1] [ref=e5]
+    - generic [ref=e6]:
+      - generic [ref=e7]:
+        - button "Cards" [ref=e8] [cursor=pointer]
+        - button "Table" [active] [ref=e9] [cursor=pointer]
+      - button "⊕ Overlay" [ref=e10] [cursor=pointer]
+      - generic [ref=e11] [cursor=pointer]:
+        - checkbox "Show backs" [checked] [ref=e12]
+        - text: Show backs
+      - button "Save" [disabled] [ref=e13]
+      - button "Export ▾" [ref=e15] [cursor=pointer]
+      - button "Print / PDF" [ref=e16] [cursor=pointer]
+      - button "Toggle dark mode" [ref=e17] [cursor=pointer]: 🌙
+  - generic [ref=e18]:
+    - complementary "Card settings and controls" [ref=e19]:
+      - generic [ref=e20]:
+        - heading "Card Type" [level=2] [ref=e21]
+        - combobox [ref=e22]:
+          - option "— Select a card type —" [selected]
+          - option "Plant Care Cards"
+          - option "TTRPG Cards"
+        - paragraph
+      - generic [ref=e23]:
+        - heading "Card Data (CSV)" [level=2] [ref=e24]
+        - button "Open CSV..." [ref=e25] [cursor=pointer]
+        - paragraph [ref=e26]: Upload a CSV matching the selected card type's fields.
+      - heading "Field Reference" [level=2] [ref=e28]
+      - generic [ref=e29]:
+        - heading "Custom Card Type" [level=2] [ref=e30]
+        - generic [ref=e31]:
+          - paragraph [ref=e32]:
+            - text: A single JSON file containing your schema, templates, and styles.
+            - link "Download starter" [ref=e33] [cursor=pointer]:
+              - /url: "#"
+          - generic [ref=e34] [cursor=pointer]:
+            - button "No file chosen" [ref=e35]
+            - generic [ref=e36]: No file chosen
+          - generic [ref=e37]:
+            - button "Load Card Type" [ref=e38] [cursor=pointer]
+            - button "⬇ Download current" [ref=e39] [cursor=pointer]
+    - main [ref=e40]:
+      - generic [ref=e41]:
+        - generic [ref=e42]: "6 cards · Digitally Owned: 0 · Played: 0"
+        - searchbox "Search cards" [ref=e44]
+        - button "☑ Select" [ref=e45] [cursor=pointer]
+```
