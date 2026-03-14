@@ -71,6 +71,22 @@ test.describe("Sub Header Panel", () => {
   // ═══════════════════════════════════════════════════════════════════════════
 
   test.describe("Column Filters", () => {
+    test("filter bar stays visible below app header when scrolling", async ({ page }) => {
+      await page.setViewportSize({ width: 1200, height: 300 });
+      await loadPlantCards(page);
+      await switchToTable(page);
+      // Scroll down so sticky positioning kicks in
+      await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+      await page.waitForTimeout(200);
+      const headerBox = await page.locator(".app-header").boundingBox();
+      const controlsBox = await page.locator(".table-controls").boundingBox();
+      const thBox = await page.locator(".data-table th").first().boundingBox();
+      // Controls must not be hidden behind the app header
+      expect(controlsBox.y).toBeGreaterThanOrEqual(headerBox.y + headerBox.height - 1);
+      // Table header must be below the controls bar
+      expect(thBox.y).toBeGreaterThanOrEqual(controlsBox.y + controlsBox.height - 1);
+    });
+
     test("Add filter button shows property dropdown", async ({ page }) => {
       await loadPlantCards(page);
       await switchToTable(page);

@@ -169,10 +169,21 @@ export function renderTable(cardType, rows) {
 
   controls.appendChild(bulkBar);
 
-  // Render controls and aggregation bar into top-level containers
+  // Render controls and aggregation bar inside the table view container
+  // so sticky positioning works correctly within the table's scroll context
   const topControlsEl = document.getElementById('top-controls');
   topControlsEl.innerHTML = '';
-  topControlsEl.appendChild(controls);
+  container.appendChild(controls);
+
+  // Set sticky offset variables so controls sit below the app header
+  // and table headers sit below the controls bar
+  requestAnimationFrame(() => {
+    const appHeader = document.querySelector('.app-header');
+    const headerH = appHeader ? appHeader.offsetHeight : 0;
+    const controlsH = controls.offsetHeight;
+    document.documentElement.style.setProperty('--header-height', headerH + 'px');
+    document.documentElement.style.setProperty('--controls-bottom', (headerH + controlsH) + 'px');
+  });
 
   const topAggEl = document.getElementById('top-aggregation-bar');
   topAggEl.innerHTML = '';
@@ -180,7 +191,7 @@ export function renderTable(cardType, rows) {
     const aggBar = document.createElement('div');
     aggBar.className = 'table-aggregation-bar';
     aggregationBarRef = aggBar;
-    topAggEl.appendChild(aggBar);
+    container.appendChild(aggBar);
   } else {
     aggregationBarRef = null;
   }

@@ -29,3 +29,4 @@ See `CLAUDE.md` for the development workflow that uses this log.
 | Date | Spec File | Requirement | Action | Justification |
 |------|-----------|-------------|--------|---------------|
 | 2026-03-14 | all | — | Created | Initial requirements baseline from product experience analysis |
+| 2026-03-14 | `03-sub-header-panel.spec.js` | filter bar stays visible below app header when scrolling | Added | Filter controls were hidden behind the sticky app header when scrolling due to incorrect sticky top offsets and DOM placement |

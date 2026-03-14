@@ -12,8 +12,8 @@
   border-bottom: 1px solid var(--border, #e0e0e0);
   flex-wrap: wrap;
   position: sticky;
-  top: 0;
-  z-index: 10;
+  top: var(--header-height, 0px);
+  z-index: 30;
 }
 
 .table-global-filter {
@@ -73,7 +73,7 @@
 .data-table th {
   cursor: pointer;
   position: sticky;
-  top: 0;
+  top: var(--controls-bottom, 0px);
   background: var(--surface);
   padding: 8px 10px;
   text-align: left;
