@@ -9,13 +9,7 @@ import { openEditModal } from './edit-view.js';
 import { deleteRows, setRowData, rerenderActiveView, getData } from './state.js';
 import { showToast } from './toast.js';
 import { pushUndo } from './undo-stack.js';
-import {
-  hashTagColor,
-  isPillField,
-  createPill,
-  createTagPicker,
-  createPillPicker,
-} from './table/pill-picker.js';
+import { hashTagColor, isPillField, createPill, createTagPicker, createPillPicker } from './table/pill-picker.js';
 
 // Re-export pickers: edit-view.js imports createTagPicker/createPillPicker from this module
 export { createTagPicker, createPillPicker };
@@ -24,7 +18,7 @@ let container = null;
 let currentCardType = null;
 let currentRows = null;
 let sortState = { key: null, dir: 'asc' };
-let columnFilters = {};  // string for text fields, Set for select/multi-select
+let columnFilters = {}; // string for text fields, Set for select/multi-select
 let globalFilter = '';
 let debounceTimer = null;
 const selectedIndices = new Set();
@@ -51,10 +45,10 @@ let aggregationBarRef = null;
 function getVisibleFields() {
   const fields = fieldsRef;
   if (visibleColumns) {
-    return fields.filter(f => visibleColumns.has(f.key));
+    return fields.filter((f) => visibleColumns.has(f.key));
   }
   // Default: show all except hidden fields
-  return fields.filter(f => !f.hidden);
+  return fields.filter((f) => !f.hidden);
 }
 
 /**
@@ -76,7 +70,7 @@ export function renderTable(cardType, rows) {
 
   // Initialize visibleColumns from schema defaults if not set
   if (!visibleColumns) {
-    visibleColumns = new Set(fields.filter(f => !f.hidden).map(f => f.key));
+    visibleColumns = new Set(fields.filter((f) => !f.hidden).map((f) => f.key));
   }
 
   // Controls bar
@@ -131,13 +125,20 @@ export function renderTable(cardType, rows) {
 
   colBtn.addEventListener('click', (e) => {
     e.stopPropagation();
-    if (!colDropdown.hidden) { colDropdown.hidden = true; return; }
+    if (!colDropdown.hidden) {
+      colDropdown.hidden = true;
+      return;
+    }
     renderColumnPrefs(colDropdown, fields);
     colDropdown.hidden = false;
   });
-  document.addEventListener('click', (e) => {
-    if (!colBtnWrap.contains(e.target)) colDropdown.hidden = true;
-  }, { signal });
+  document.addEventListener(
+    'click',
+    (e) => {
+      if (!colBtnWrap.contains(e.target)) colDropdown.hidden = true;
+    },
+    { signal },
+  );
   controls.appendChild(colBtnWrap);
 
   const rowCount = document.createElement('span');
@@ -231,7 +232,7 @@ function rebuildTable() {
   selectAllCb.type = 'checkbox';
   selectAllCb.addEventListener('change', () => {
     const visibleCheckboxes = tbodyRef.querySelectorAll('.row-checkbox');
-    visibleCheckboxes.forEach(cb => {
+    visibleCheckboxes.forEach((cb) => {
       cb.checked = selectAllCb.checked;
       const idx = parseInt(cb.dataset.rowIdx);
       if (selectAllCb.checked) selectedIndices.add(idx);
@@ -246,9 +247,10 @@ function rebuildTable() {
     const th = document.createElement('th');
     th.textContent = field.label || field.key;
     th.dataset.key = field.key;
-    th.setAttribute('aria-sort', sortState.key === field.key
-      ? (sortState.dir === 'asc' ? 'ascending' : 'descending')
-      : 'none');
+    th.setAttribute(
+      'aria-sort',
+      sortState.key === field.key ? (sortState.dir === 'asc' ? 'ascending' : 'descending') : 'none',
+    );
     if (sortState.key === field.key) {
       th.classList.add('sorted', sortState.dir);
     }
@@ -259,12 +261,10 @@ function rebuildTable() {
         sortState.key = field.key;
         sortState.dir = 'asc';
       }
-      headerRow.querySelectorAll('th[data-key]').forEach(h => {
+      headerRow.querySelectorAll('th[data-key]').forEach((h) => {
         h.classList.remove('sorted', 'asc', 'desc');
         const isSorted = h.dataset.key === sortState.key;
-        h.setAttribute('aria-sort', isSorted
-          ? (sortState.dir === 'asc' ? 'ascending' : 'descending')
-          : 'none');
+        h.setAttribute('aria-sort', isSorted ? (sortState.dir === 'asc' ? 'ascending' : 'descending') : 'none');
         if (isSorted) {
           h.classList.add('sorted', sortState.dir);
         }
@@ -342,9 +342,13 @@ function buildFilterBar(fields) {
     dropdown.hidden = false;
   });
 
-  document.addEventListener('click', (e) => {
-    if (!bar.contains(e.target)) dropdown.hidden = true;
-  }, { signal: _abortController?.signal });
+  document.addEventListener(
+    'click',
+    (e) => {
+      if (!bar.contains(e.target)) dropdown.hidden = true;
+    },
+    { signal: _abortController?.signal },
+  );
 
   renderFilterTokens();
   return bar;
@@ -413,7 +417,11 @@ function showValueStep(dropdown, field, fields) {
     for (const row of currentRows) {
       const val = row[field.key];
       if (val && typeof val === 'string') {
-        val.split(sep).map(v => v.trim()).filter(Boolean).forEach(v => optSet.add(v));
+        val
+          .split(sep)
+          .map((v) => v.trim())
+          .filter(Boolean)
+          .forEach((v) => optSet.add(v));
       }
     }
     if (optSet.size > 0) filterOptions = [...optSet].sort();
@@ -548,7 +556,10 @@ function renderCellContent(td, value, field) {
   if (isPillField(field)) {
     if (field.type === 'multi-select') {
       const sep = field.separator || '|';
-      const values = String(value).split(sep).map(v => v.trim()).filter(Boolean);
+      const values = String(value)
+        .split(sep)
+        .map((v) => v.trim())
+        .filter(Boolean);
       const group = document.createElement('span');
       group.className = 'cell-pill-group';
       for (const v of values) group.appendChild(createPill(v, field));
@@ -558,7 +569,10 @@ function renderCellContent(td, value, field) {
     }
   } else if (field.type === 'tags') {
     const sep = field.separator || '|';
-    const values = String(value).split(sep).map(v => v.trim()).filter(Boolean);
+    const values = String(value)
+      .split(sep)
+      .map((v) => v.trim())
+      .filter(Boolean);
     if (values.length > 0) {
       const group = document.createElement('span');
       group.className = 'cell-pill-group';
@@ -602,7 +616,7 @@ function startCellEdit(td, rowIdx, field) {
         td._tagPickerValues = newValues.length > 0 ? [newValues[newValues.length - 1]] : [];
         // Auto-commit on selection
         commitCellEdit();
-      }
+      },
     );
     td._tagPickerValues = currentValue ? [currentValue] : [];
     td.appendChild(picker);
@@ -616,10 +630,14 @@ function startCellEdit(td, rowIdx, field) {
     setTimeout(() => {
       document.addEventListener('mousedown', outsideHandler, true);
     }, 0);
-
   } else if (field.type === 'multi-select' && field.options) {
     const sep = field.separator || '|';
-    const selected = currentValue ? String(currentValue).split(sep).map(v => v.trim()).filter(Boolean) : [];
+    const selected = currentValue
+      ? String(currentValue)
+          .split(sep)
+          .map((v) => v.trim())
+          .filter(Boolean)
+      : [];
 
     const picker = createPillPicker(field, selected, (newValues) => {
       td._tagPickerValues = newValues;
@@ -636,15 +654,24 @@ function startCellEdit(td, rowIdx, field) {
     setTimeout(() => {
       document.addEventListener('mousedown', outsideHandler, true);
     }, 0);
-
   } else if (field.type === 'tags') {
     const sep = field.separator || '|';
-    const selected = currentValue ? String(currentValue).split(sep).map(v => v.trim()).filter(Boolean) : [];
+    const selected = currentValue
+      ? String(currentValue)
+          .split(sep)
+          .map((v) => v.trim())
+          .filter(Boolean)
+      : [];
     const allRows = getData() || currentRows;
 
-    const picker = createTagPicker(field, selected, (newValues) => {
-      td._tagPickerValues = newValues;
-    }, allRows);
+    const picker = createTagPicker(
+      field,
+      selected,
+      (newValues) => {
+        td._tagPickerValues = newValues;
+      },
+      allRows,
+    );
     td._tagPickerValues = selected;
     td.appendChild(picker);
 
@@ -657,7 +684,6 @@ function startCellEdit(td, rowIdx, field) {
     setTimeout(() => {
       document.addEventListener('mousedown', outsideHandler, true);
     }, 0);
-
   } else {
     const input = document.createElement('input');
     input.type = field.type === 'number' ? 'number' : 'text';
@@ -705,8 +731,14 @@ function commitCellEdit() {
 
   // Push undo command (REQ-055)
   pushUndo({
-    undo: () => { setRowData(rowIdx, oldRow); rerenderActiveView(); },
-    redo: () => { setRowData(rowIdx, row); rerenderActiveView(); },
+    undo: () => {
+      setRowData(rowIdx, oldRow);
+      rerenderActiveView();
+    },
+    redo: () => {
+      setRowData(rowIdx, row);
+      rerenderActiveView();
+    },
   });
 
   td.classList.remove('cell-editing');
@@ -736,7 +768,7 @@ function _applyFiltersAndSort(rows, fields) {
   let indices = rows.map((_, i) => i);
 
   // Column filters
-  indices = indices.filter(i => {
+  indices = indices.filter((i) => {
     for (const field of fields) {
       const filterVal = columnFilters[field.key];
       if (!filterVal) continue;
@@ -746,8 +778,8 @@ function _applyFiltersAndSort(rows, fields) {
         const cellVal = String(rows[i][field.key] || '');
         if (field.type === 'multi-select' || field.type === 'tags') {
           const sep = field.separator || '|';
-          const cellOptions = cellVal.split(sep).map(v => v.trim());
-          if (!cellOptions.some(v => filterVal.has(v))) return false;
+          const cellOptions = cellVal.split(sep).map((v) => v.trim());
+          if (!cellOptions.some((v) => filterVal.has(v))) return false;
         } else {
           if (!filterVal.has(cellVal)) return false;
         }
@@ -762,9 +794,11 @@ function _applyFiltersAndSort(rows, fields) {
   // Global filter
   if (globalFilter) {
     const gf = globalFilter.toLowerCase();
-    indices = indices.filter(i => {
-      return fields.some(field => {
-        return String(rows[i][field.key] || '').toLowerCase().includes(gf);
+    indices = indices.filter((i) => {
+      return fields.some((field) => {
+        return String(rows[i][field.key] || '')
+          .toLowerCase()
+          .includes(gf);
       });
     });
   }
@@ -772,7 +806,7 @@ function _applyFiltersAndSort(rows, fields) {
   // Sort
   if (sortState.key) {
     const key = sortState.key;
-    const field = fields.find(f => f.key === key);
+    const field = fields.find((f) => f.key === key);
     const isNumber = field && field.type === 'number';
     indices.sort((a, b) => {
       const va = rows[a][key] || '';
@@ -871,14 +905,13 @@ function rebuildTbody() {
           e.preventDefault();
           const curRow = parseInt(td.dataset.navRow);
           const curCol = parseInt(td.dataset.navCol);
-          let targetRow = curRow, targetCol = curCol;
+          let targetRow = curRow,
+            targetCol = curCol;
           if (e.key === 'ArrowDown') targetRow++;
           if (e.key === 'ArrowUp') targetRow--;
           if (e.key === 'ArrowRight') targetCol++;
           if (e.key === 'ArrowLeft') targetCol--;
-          const target = tbodyRef.querySelector(
-            `td[data-nav-row="${targetRow}"][data-nav-col="${targetCol}"]`
-          );
+          const target = tbodyRef.querySelector(`td[data-nav-row="${targetRow}"][data-nav-col="${targetCol}"]`);
           if (target) target.focus();
         }
       });
@@ -904,8 +937,8 @@ function updateBulkBar() {
 
 function updateSelectAllState(visibleIndices) {
   if (!selectAllCb || !visibleIndices) return;
-  const allChecked = visibleIndices.length > 0 && visibleIndices.every(i => selectedIndices.has(i));
-  const someChecked = visibleIndices.some(i => selectedIndices.has(i));
+  const allChecked = visibleIndices.length > 0 && visibleIndices.every((i) => selectedIndices.has(i));
+  const someChecked = visibleIndices.some((i) => selectedIndices.has(i));
   selectAllCb.checked = allChecked;
   selectAllCb.indeterminate = someChecked && !allChecked;
 }
@@ -919,7 +952,7 @@ function updateAggregationBar(visibleIndices) {
   const rows = currentRows;
 
   for (const agg of currentCardType.aggregations) {
-    const count = visibleIndices.filter(i => {
+    const count = visibleIndices.filter((i) => {
       const val = rows[i][agg.field];
       return val === agg.value;
     }).length;
@@ -938,8 +971,7 @@ function updateAggregationBar(visibleIndices) {
 export function getFilteredIndices() {
   if (!currentRows || !fieldsRef) return null;
 
-  const hasFilters = globalFilter ||
-    Object.values(columnFilters).some(v => v instanceof Set ? v.size > 0 : !!v);
+  const hasFilters = globalFilter || Object.values(columnFilters).some((v) => (v instanceof Set ? v.size > 0 : !!v));
   const hasSorting = !!sortState.key;
   if (!hasFilters && !hasSorting) return null;
 
@@ -947,7 +979,10 @@ export function getFilteredIndices() {
 }
 
 export function destroyTable() {
-  if (_abortController) { _abortController.abort(); _abortController = null; }
+  if (_abortController) {
+    _abortController.abort();
+    _abortController = null;
+  }
   if (container) container.innerHTML = '';
   const topControlsEl = document.getElementById('top-controls');
   if (topControlsEl) topControlsEl.innerHTML = '';

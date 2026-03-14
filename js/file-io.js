@@ -17,11 +17,17 @@ let _fileName = null; // display name for session restore
 export const hasFSAPI = typeof window !== 'undefined' && 'showOpenFilePicker' in window;
 
 /** @returns {FileSystemFileHandle|null} */
-export function getFileHandle() { return _fileHandle; }
-export function getFileName() { return _fileName; }
+export function getFileHandle() {
+  return _fileHandle;
+}
+export function getFileName() {
+  return _fileName;
+}
 
 /** @param {FileSystemFileHandle|null} h */
-export function setFileHandle(h) { _fileHandle = h; }
+export function setFileHandle(h) {
+  _fileHandle = h;
+}
 
 /**
  * Trigger a browser file download.
@@ -69,7 +75,10 @@ export async function openCsvWithPicker(csvUploadInput) {
  */
 export async function loadCsvFile(file, displayName) {
   const ct = getActiveCardType();
-  if (!ct) { showToast('Please select a card type first.', 'error'); return; }
+  if (!ct) {
+    showToast('Please select a card type first.', 'error');
+    return;
+  }
 
   // Guard against extremely large files (> 20 MB)
   const MAX_FILE_SIZE = 20 * 1024 * 1024;
@@ -80,22 +89,31 @@ export async function loadCsvFile(file, displayName) {
 
   const { data: rawData, errors } = await parseCsv(file);
   if (errors.length > 0) showToast(`CSV warnings: ${errors[0]}`, 'error');
-  if (rawData.length === 0) { showToast('CSV is empty or could not be parsed.', 'error'); return; }
+  if (rawData.length === 0) {
+    showToast('CSV is empty or could not be parsed.', 'error');
+    return;
+  }
 
   const data = remapHeaders(rawData, ct.fields);
 
   // Warn when no CSV columns match schema fields (REQ-056)
-  const schemaKeys = new Set(ct.fields.map(f => f.key));
-  const matched = Object.keys(data[0] || {}).filter(k => schemaKeys.has(k));
+  const schemaKeys = new Set(ct.fields.map((f) => f.key));
+  const matched = Object.keys(data[0] || {}).filter((k) => schemaKeys.has(k));
   if (matched.length === 0 && ct.fields.length > 0) {
-    const loaded = Object.keys(data[0] || {}).slice(0, 5).join(', ');
-    const expected = ct.fields.slice(0, 5).map(f => f.key).join(', ');
+    const loaded = Object.keys(data[0] || {})
+      .slice(0, 5)
+      .join(', ');
+    const expected = ct.fields
+      .slice(0, 5)
+      .map((f) => f.key)
+      .join(', ');
     showToast(
       `No CSV columns match "${ct.name}" fields. Found: ${loaded || '(none)'}. Expected: ${expected}…`,
-      'error', 8000,
+      'error',
+      8000,
     );
   } else {
-    const unmatched = ct.fields.map(f => f.key).filter(k => !matched.includes(k));
+    const unmatched = ct.fields.map((f) => f.key).filter((k) => !matched.includes(k));
     if (unmatched.length > 0) console.warn(`[card-maker] Unmatched schema fields: ${unmatched.join(', ')}`);
   }
 
@@ -113,7 +131,10 @@ export async function loadCsvFile(file, displayName) {
 export async function saveToFile() {
   const ct = getActiveCardType();
   const data = getData();
-  if (!ct || !data) { showToast('Nothing to save.', 'error'); return; }
+  if (!ct || !data) {
+    showToast('Nothing to save.', 'error');
+    return;
+  }
 
   const csvString = generateCsv(ct.fields, data);
 
@@ -145,7 +166,9 @@ export function updateSaveState() {
   saveBtn.disabled = !data;
   saveBtn.title = _fileHandle
     ? `Save to ${_fileHandle.name} (Ctrl+S)`
-    : data ? 'Download CSV (Ctrl+S)' : 'No data loaded';
+    : data
+      ? 'Download CSV (Ctrl+S)'
+      : 'No data loaded';
 }
 
 /**
@@ -155,8 +178,12 @@ export function updateSaveState() {
 export function showFilename(name) {
   const el = document.getElementById('csv-filename');
   if (!el) return;
-  if (name) { el.textContent = name; el.style.display = 'block'; }
-  else { el.style.display = 'none'; }
+  if (name) {
+    el.textContent = name;
+    el.style.display = 'block';
+  } else {
+    el.style.display = 'none';
+  }
 }
 
 /**

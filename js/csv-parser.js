@@ -15,13 +15,13 @@ export function parseCsv(input) {
       transformHeader: (h) => h.trim(),
       complete: (results) => {
         const errors = results.errors
-          .filter(e => e.type !== 'FieldMismatch') // Allow ragged rows
-          .map(e => `Row ${e.row}: ${e.message}`);
+          .filter((e) => e.type !== 'FieldMismatch') // Allow ragged rows
+          .map((e) => `Row ${e.row}: ${e.message}`);
         resolve({ data: results.data, errors });
       },
       error: (err) => {
         resolve({ data: [], errors: [err.message] });
-      }
+      },
     };
 
     Papa.parse(input, config);
@@ -36,12 +36,12 @@ export function parseCsv(input) {
  * @returns {string} CSV string
  */
 export function generateCsv(fields, sampleRows) {
-  const keys = fields.map(f => f.key);
+  const keys = fields.map((f) => f.key);
   const lines = [keys.join(',')];
 
   if (sampleRows) {
     for (const row of sampleRows) {
-      const vals = keys.map(k => {
+      const vals = keys.map((k) => {
         let v = row[k] ?? '';
         v = String(v);
         // Quote if contains comma, quote, or newline
@@ -79,10 +79,10 @@ export function remapHeaders(rows, fields) {
 
   // Check if remapping is needed (first row headers already match keys)
   const sampleHeaders = Object.keys(rows[0]);
-  const needsRemap = sampleHeaders.some(h => !(h in headerToKey) || headerToKey[h] !== h);
+  const needsRemap = sampleHeaders.some((h) => !(h in headerToKey) || headerToKey[h] !== h);
   if (!needsRemap) return rows;
 
-  return rows.map(row => {
+  return rows.map((row) => {
     const mapped = {};
     for (const [header, value] of Object.entries(row)) {
       const key = headerToKey[header] || headerToKey[header.toLowerCase()] || header;

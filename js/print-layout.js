@@ -23,7 +23,10 @@ let _cancelPrint = null; // cancel handle for in-progress generation
  */
 export function buildPrintLayout(cardType, rows, onProgress) {
   // Cancel any previous in-progress build
-  if (_cancelPrint) { _cancelPrint(); _cancelPrint = null; }
+  if (_cancelPrint) {
+    _cancelPrint();
+    _cancelPrint = null;
+  }
 
   const printArea = document.getElementById('print-area');
   if (!printArea) return;
@@ -38,7 +41,7 @@ export function buildPrintLayout(cardType, rows, onProgress) {
 
   // Small decks: render synchronously (no rAF overhead)
   if (totalPages <= PAGES_PER_CHUNK) {
-    pageGroups.forEach(chunk => renderPageGroup(printArea, cardType, chunk));
+    pageGroups.forEach((chunk) => renderPageGroup(printArea, cardType, chunk));
     onProgress?.(100);
     return;
   }
@@ -48,7 +51,9 @@ export function buildPrintLayout(cardType, rows, onProgress) {
   let pagesRendered = 0;
   let cancelled = false;
 
-  _cancelPrint = () => { cancelled = true; };
+  _cancelPrint = () => {
+    cancelled = true;
+  };
 
   // Show progress indicator
   const progress = _createProgressBar(totalPages);
@@ -199,7 +204,10 @@ function addCutMarks(pageDiv) {
  * Clear the print layout and cancel any in-progress build.
  */
 export function clearPrintLayout() {
-  if (_cancelPrint) { _cancelPrint(); _cancelPrint = null; }
+  if (_cancelPrint) {
+    _cancelPrint();
+    _cancelPrint = null;
+  }
   const printArea = document.getElementById('print-area');
   if (printArea) printArea.innerHTML = '';
 }

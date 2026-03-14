@@ -22,12 +22,18 @@ async function init() {
 
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'z') {
         e.preventDefault();
-        if (canRedo()) { redo(); showToast('Redo', 'info', 1500); }
+        if (canRedo()) {
+          redo();
+          showToast('Redo', 'info', 1500);
+        }
         return;
       }
       if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
         e.preventDefault();
-        if (canUndo()) { undo(); showToast('Undo', 'info', 1500); }
+        if (canUndo()) {
+          undo();
+          showToast('Undo', 'info', 1500);
+        }
         return;
       }
     });
@@ -53,7 +59,7 @@ document.addEventListener('DOMContentLoaded', init);
 
 // REQ-046: register service worker for PWA offline support
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js').catch(err => {
+  navigator.serviceWorker.register('/sw.js').catch((err) => {
     console.warn('[card-maker] SW registration failed:', err.message);
   });
 

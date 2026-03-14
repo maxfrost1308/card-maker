@@ -13,7 +13,7 @@
   flex-wrap: wrap;
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: 30;
 }
 
 .table-global-filter {
@@ -495,7 +495,10 @@ select.cell-edit-input {
   background: transparent;
   color: var(--text-muted);
   cursor: pointer;
-  transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+  transition:
+    background-color 0.15s,
+    color 0.15s,
+    border-color 0.15s;
 }
 
 .pill-picker-pill:hover {
@@ -599,5 +602,7 @@ select.cell-edit-input {
 }
 
 @media print {
-  .table-view { display: none !important; }
+  .table-view {
+    display: none !important;
+  }
 }

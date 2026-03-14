@@ -17,12 +17,16 @@ import { getStarterSchema, getStarterFront, getStarterBack, getStarterCss } from
 /** Build a starter bundle JSON combining schema + templates + styles. */
 function _getStarterBundle() {
   const schema = JSON.parse(getStarterSchema());
-  return JSON.stringify({
-    ...schema,
-    frontTemplate: getStarterFront(),
-    backTemplate: getStarterBack(),
-    styles: getStarterCss(),
-  }, null, 2);
+  return JSON.stringify(
+    {
+      ...schema,
+      frontTemplate: getStarterFront(),
+      backTemplate: getStarterBack(),
+      styles: getStarterCss(),
+    },
+    null,
+    2,
+  );
 }
 import { preloadIcons } from './icon-loader.js';
 import { createFocusTrap } from './focus-trap.js';
@@ -31,11 +35,18 @@ import { createVirtualGrid, VS_THRESHOLD } from './virtual-scroll.js';
 import { getQuery } from './deck-filter.js';
 import { showToast } from './toast.js';
 import {
-  hasFSAPI, openCsvWithPicker, loadCsvFile, saveToFile,
-  updateSaveState, downloadFile, clearFileState,
+  hasFSAPI,
+  openCsvWithPicker,
+  loadCsvFile,
+  saveToFile,
+  updateSaveState,
+  downloadFile,
+  clearFileState,
 } from './file-io.js';
 import {
-  openSidebar, closeSidebar, refreshCardTypeList as _refreshCardTypeList,
+  openSidebar,
+  closeSidebar,
+  refreshCardTypeList as _refreshCardTypeList,
   selectCardType as _selectCardType,
 } from './sidebar.js';
 
@@ -54,9 +65,9 @@ const customBundle = document.getElementById('custom-bundle');
 const customUploadBtn = document.getElementById('custom-upload-btn');
 const mainArea = document.getElementById('main-content');
 
-let activeView = 'cards';       // 'cards' | 'table'
-let overlayMode = false;        // show field data overlaid on cards
-let selectMode = false;         // card selection mode
+let activeView = 'cards'; // 'cards' | 'table'
+let overlayMode = false; // show field data overlaid on cards
+let selectMode = false; // card selection mode
 const selectedCards = new Set(); // selected card data indices
 let _virtualGrid = null; // active VirtualGrid instance (if any)
 
@@ -65,9 +76,13 @@ export { getData, setRowData, deleteRows } from './state.js';
 export { showToast } from './toast.js';
 export { downloadFile } from './file-io.js';
 
-export function getActiveCardType() { return registry.get(cardTypeSelect.value); }
+export function getActiveCardType() {
+  return registry.get(cardTypeSelect.value);
+}
 
-export function refreshCardTypeList() { _refreshCardTypeList(); }
+export function refreshCardTypeList() {
+  _refreshCardTypeList();
+}
 
 export function autoSelect(id) {
   cardTypeSelect.value = id;
@@ -103,8 +118,8 @@ export async function rerenderActiveView(cardType, rows) {
  */
 function collectIconValues(fields, rows) {
   return fields
-    .filter(f => f.type === 'icon')
-    .flatMap(f => rows.map(r => r[f.key]).filter(v => v && typeof v === 'string'));
+    .filter((f) => f.type === 'icon')
+    .flatMap((f) => rows.map((r) => r[f.key]).filter((v) => v && typeof v === 'string'));
 }
 
 /**
@@ -115,7 +130,10 @@ export async function renderCards(cardType, rows, filteredIndices) {
   const indices = filteredIndices || rows.map((_, i) => i);
 
   // Tear down any previous virtual grid
-  if (_virtualGrid) { _virtualGrid.destroy(); _virtualGrid = null; }
+  if (_virtualGrid) {
+    _virtualGrid.destroy();
+    _virtualGrid = null;
+  }
 
   cardGrid.innerHTML = '';
   cardGrid.classList.remove('empty-state');
@@ -123,7 +141,10 @@ export async function renderCards(cardType, rows, filteredIndices) {
   cardGrid.setAttribute('aria-label', 'Card deck');
 
   // REQ-051: loading indicator during icon preload
-  const iconValues = collectIconValues(cardType.fields, indices.map(i => rows[i]));
+  const iconValues = collectIconValues(
+    cardType.fields,
+    indices.map((i) => rows[i]),
+  );
   if (iconValues.length > 0) {
     const loader = document.createElement('div');
     loader.className = 'loading-indicator';
@@ -156,7 +177,13 @@ export async function renderCards(cardType, rows, filteredIndices) {
   // Apply shared search filter (REQ-065)
   const q = getQuery().toLowerCase();
   const displayIndices = q
-    ? indices.filter(i => cardType.fields.some(f => String(rows[i][f.key] || '').toLowerCase().includes(q)))
+    ? indices.filter((i) =>
+        cardType.fields.some((f) =>
+          String(rows[i][f.key] || '')
+            .toLowerCase()
+            .includes(q),
+        ),
+      )
     : indices;
 
   for (const idx of displayIndices) {
@@ -190,9 +217,12 @@ export async function renderCards(cardType, rows, filteredIndices) {
       overlay.className = 'card-overlay';
       overlay.setAttribute('aria-hidden', 'true');
       const lines = cardType.fields
-        .filter(f => row[f.key] && String(row[f.key]).trim())
+        .filter((f) => row[f.key] && String(row[f.key]).trim())
         .slice(0, 6)
-        .map(f => `<div class="overlay-field"><span class="overlay-label">${escapeHtml(f.label)}</span><span class="overlay-value">${escapeHtml(String(row[f.key]).slice(0, 40))}</span></div>`)
+        .map(
+          (f) =>
+            `<div class="overlay-field"><span class="overlay-label">${escapeHtml(f.label)}</span><span class="overlay-value">${escapeHtml(String(row[f.key]).slice(0, 40))}</span></div>`,
+        )
         .join('');
       overlay.innerHTML = lines;
       frontWrapper.appendChild(overlay);
@@ -206,7 +236,8 @@ export async function renderCards(cardType, rows, filteredIndices) {
       cb.checked = selectedCards.has(idx);
       cb.setAttribute('aria-label', `Select card ${idx + 1}`);
       cb.addEventListener('change', () => {
-        if (cb.checked) selectedCards.add(idx); else selectedCards.delete(idx);
+        if (cb.checked) selectedCards.add(idx);
+        else selectedCards.delete(idx);
         pair.classList.toggle('selected', cb.checked);
         _updateCardSelectionBar();
       });
@@ -222,7 +253,10 @@ export async function renderCards(cardType, rows, filteredIndices) {
     editBtn.addEventListener('click', (e) => {
       if (selectMode) {
         const cb = pair.querySelector('.card-select-cb');
-        if (cb) { cb.checked = !cb.checked; cb.dispatchEvent(new Event('change')); }
+        if (cb) {
+          cb.checked = !cb.checked;
+          cb.dispatchEvent(new Event('change'));
+        }
         return;
       }
       openEditModal(idx, e.currentTarget);
@@ -281,7 +315,8 @@ function openBulkEditModal() {
       input.appendChild(blank);
       for (const opt of field.options) {
         const o = document.createElement('option');
-        o.value = opt; o.textContent = opt;
+        o.value = opt;
+        o.textContent = opt;
         input.appendChild(o);
       }
     } else if (field.type === 'multi-select' && field.options) {
@@ -300,12 +335,17 @@ function openBulkEditModal() {
         wrap.appendChild(lbl);
       }
       none.querySelector('input').addEventListener('change', () => {
-        wrap.querySelectorAll('input[type=checkbox]').forEach(c => { c.disabled = true; c.checked = false; });
+        wrap.querySelectorAll('input[type=checkbox]').forEach((c) => {
+          c.disabled = true;
+          c.checked = false;
+        });
       });
       const setBtn = document.createElement('label');
       setBtn.innerHTML = `<input type="radio" name="bms_${field.key}" value="set"> Set to:`;
       setBtn.querySelector('input').addEventListener('change', () => {
-        wrap.querySelectorAll('input[type=checkbox]').forEach(c => { c.disabled = false; });
+        wrap.querySelectorAll('input[type=checkbox]').forEach((c) => {
+          c.disabled = false;
+        });
       });
       wrap.appendChild(setBtn);
       row.appendChild(wrap);
@@ -340,24 +380,27 @@ function closeBulkEditModal() {
 function applyBulkEdit() {
   const ct = getActiveCardType();
   const data = getData();
-  if (!ct || !data || selectedCards.size === 0) { closeBulkEditModal(); return; }
+  if (!ct || !data || selectedCards.size === 0) {
+    closeBulkEditModal();
+    return;
+  }
 
   const modal = document.getElementById('bulk-edit-modal');
   const updates = {};
 
   // Collect plain input fields
-  modal.querySelectorAll('[data-field-key]').forEach(el => {
+  modal.querySelectorAll('[data-field-key]').forEach((el) => {
     if (el.dataset.fieldType === 'multi-select') return; // handled below
     const val = el.value?.trim();
     if (val) updates[el.dataset.fieldKey] = val;
   });
 
   // Collect multi-select fields
-  modal.querySelectorAll('.bulk-ms-wrap').forEach(wrap => {
+  modal.querySelectorAll('.bulk-ms-wrap').forEach((wrap) => {
     const setRadio = wrap.querySelector('input[type=radio][value=set]');
     if (!setRadio?.checked) return;
-    const chosen = [...wrap.querySelectorAll('input[type=checkbox]:checked')].map(c => c.value);
-    const fieldDef = ct.fields.find(f => f.key === wrap.dataset.fieldKey);
+    const chosen = [...wrap.querySelectorAll('input[type=checkbox]:checked')].map((c) => c.value);
+    const fieldDef = ct.fields.find((f) => f.key === wrap.dataset.fieldKey);
     const sep = fieldDef?.separator || '|';
     if (chosen.length > 0) updates[wrap.dataset.fieldKey] = chosen.join(sep);
   });
@@ -419,7 +462,7 @@ export function bindEvents() {
 
   // Sidebar toggle (mobile)
   sidebarToggleBtn.addEventListener('click', () =>
-    sidebarEl.classList.contains('open') ? closeSidebar() : openSidebar()
+    sidebarEl.classList.contains('open') ? closeSidebar() : openSidebar(),
   );
   sidebarBackdrop.addEventListener('click', closeSidebar);
 
@@ -447,18 +490,26 @@ export function bindEvents() {
     const inInput = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
 
     if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-      e.preventDefault(); if (getData()) saveToFile(); return;
+      e.preventDefault();
+      if (getData()) saveToFile();
+      return;
     }
     if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
-      e.preventDefault(); printBtn.click(); return;
+      e.preventDefault();
+      printBtn.click();
+      return;
     }
     if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
       e.preventDefault();
       const target = document.querySelector('.table-global-filter');
-      target?.focus(); target?.select?.();
+      target?.focus();
+      target?.select?.();
       return;
     }
-    if (e.key === '?' && !inInput) { e.preventDefault(); showShortcutsModal(); }
+    if (e.key === '?' && !inInput) {
+      e.preventDefault();
+      showShortcutsModal();
+    }
   });
 
   // Show/hide backs
@@ -471,12 +522,12 @@ export function bindEvents() {
   // View toggle (Cards / Table)
   const viewBtns = document.querySelectorAll('.view-btn');
   const tableViewEl = document.getElementById('table-view');
-  viewBtns.forEach(btn => {
+  viewBtns.forEach((btn) => {
     btn.addEventListener('click', () => {
       const view = btn.dataset.view;
       if (view === activeView) return;
       activeView = view;
-      viewBtns.forEach(b => b.classList.toggle('active', b.dataset.view === view));
+      viewBtns.forEach((b) => b.classList.toggle('active', b.dataset.view === view));
       cardGrid.hidden = view !== 'cards';
       tableViewEl.hidden = view !== 'table';
       const ct = getActiveCardType();
@@ -487,10 +538,10 @@ export function bindEvents() {
 
   // Card grid size toggle (comfortable / compact)
   const sizeBtns = document.querySelectorAll('.size-btn');
-  sizeBtns.forEach(btn => {
+  sizeBtns.forEach((btn) => {
     btn.addEventListener('click', () => {
       const size = btn.dataset.size;
-      sizeBtns.forEach(b => b.classList.toggle('active', b.dataset.size === size));
+      sizeBtns.forEach((b) => b.classList.toggle('active', b.dataset.size === size));
       cardGrid.dataset.density = size;
       // Re-render so virtual grid recalculates column counts
       const ct = getActiveCardType();
@@ -537,8 +588,11 @@ export function bindEvents() {
   printBtn.addEventListener('click', () => {
     const ct = getActiveCardType();
     const data = getData() || ct?.sampleData;
-    if (!ct || !data) { showToast('No cards to print.', 'error'); return; }
-    const rows = (getFilteredIndices() || data.map((_, i) => i)).map(i => data[i]);
+    if (!ct || !data) {
+      showToast('No cards to print.', 'error');
+      return;
+    }
+    const rows = (getFilteredIndices() || data.map((_, i) => i)).map((i) => data[i]);
     const pageCount = Math.ceil(rows.length / 9);
 
     if (pageCount <= 3) {
@@ -577,12 +631,20 @@ export function bindEvents() {
   // Download current card type as bundle
   document.getElementById('custom-download-btn')?.addEventListener('click', () => {
     const ct = getActiveCardType();
-    if (!ct) { showToast('No card type selected.', 'error'); return; }
+    if (!ct) {
+      showToast('No card type selected.', 'error');
+      return;
+    }
     const bundle = {
-      id: ct.id, name: ct.name, description: ct.description || '',
-      cardSize: ct.cardSize, fields: ct.fields,
-      frontTemplate: ct.frontTemplate, backTemplate: ct.backTemplate || '',
-      styles: ct.styles || ct.css || '', aggregations: ct.aggregations || [],
+      id: ct.id,
+      name: ct.name,
+      description: ct.description || '',
+      cardSize: ct.cardSize,
+      fields: ct.fields,
+      frontTemplate: ct.frontTemplate,
+      backTemplate: ct.backTemplate || '',
+      styles: ct.styles || ct.css || '',
+      aggregations: ct.aggregations || [],
       colorMapping: ct.colorMapping || {},
     };
     downloadFile(`${ct.id}-bundle.json`, JSON.stringify(bundle, null, 2), 'application/json');
@@ -590,10 +652,16 @@ export function bindEvents() {
 
   // Drag-and-drop CSV (REQ-050)
   mainArea.addEventListener('dragover', (e) => {
-    if (e.dataTransfer.types.includes('Files')) { e.preventDefault(); mainArea.classList.add('drag-over'); }
+    if (e.dataTransfer.types.includes('Files')) {
+      e.preventDefault();
+      mainArea.classList.add('drag-over');
+    }
   });
   mainArea.addEventListener('dragenter', (e) => {
-    if (e.dataTransfer.types.includes('Files')) { e.preventDefault(); mainArea.classList.add('drag-over'); }
+    if (e.dataTransfer.types.includes('Files')) {
+      e.preventDefault();
+      mainArea.classList.add('drag-over');
+    }
   });
   mainArea.addEventListener('dragleave', (e) => {
     if (!mainArea.contains(e.relatedTarget)) mainArea.classList.remove('drag-over');
@@ -605,7 +673,8 @@ export function bindEvents() {
     if (!file) return;
     const ext = file.name.split('.').pop().toLowerCase();
     if (!['csv', 'tsv', 'txt'].includes(ext)) {
-      showToast('Please drop a CSV, TSV, or TXT file.', 'error'); return;
+      showToast('Please drop a CSV, TSV, or TXT file.', 'error');
+      return;
     }
     await loadCsvFile(file, file.name);
   });
@@ -617,7 +686,10 @@ export function bindEvents() {
   // Custom card type upload (single bundle JSON)
   customUploadBtn?.addEventListener('click', async () => {
     const file = customBundle?.files[0];
-    if (!file) { showToast('Please choose a card type JSON file.', 'error'); return; }
+    if (!file) {
+      showToast('Please choose a card type JSON file.', 'error');
+      return;
+    }
     try {
       const text = await file.text();
       const bundle = JSON.parse(text);
@@ -626,10 +698,14 @@ export function bindEvents() {
       cardTypeSelect.value = ct.id;
       _selectCardType(ct.id, renderCards, renderEmpty);
       showToast(`Loaded card type: ${ct.name}`, 'success');
-      if (customBundle) { customBundle.value = ''; }
+      if (customBundle) {
+        customBundle.value = '';
+      }
       const nameEl = document.getElementById('custom-file-name');
       if (nameEl) nameEl.textContent = 'No file chosen';
-    } catch (err) { showToast(err.message, 'error', 6000); }
+    } catch (err) {
+      showToast(err.message, 'error', 6000);
+    }
   });
 
   // Export menu toggle
@@ -643,7 +719,10 @@ export function bindEvents() {
       exportMenuBtn.setAttribute('aria-expanded', String(!open));
     });
     document.addEventListener('click', () => {
-      if (!exportMenu.hidden) { exportMenu.hidden = true; exportMenuBtn.setAttribute('aria-expanded', 'false'); }
+      if (!exportMenu.hidden) {
+        exportMenu.hidden = true;
+        exportMenuBtn.setAttribute('aria-expanded', 'false');
+      }
     });
   }
 
@@ -682,7 +761,10 @@ export function bindEvents() {
 
 function showShortcutsModal() {
   const existing = document.getElementById('shortcuts-modal');
-  if (existing) { existing.remove(); return; }
+  if (existing) {
+    existing.remove();
+    return;
+  }
 
   const modal = document.createElement('div');
   modal.id = 'shortcuts-modal';
@@ -720,9 +802,14 @@ function showShortcutsModal() {
   }
 
   modal.querySelector('#shortcuts-close').addEventListener('click', closeShortcutsModal);
-  modal.addEventListener('click', (e) => { if (e.target === modal) closeShortcutsModal(); });
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) closeShortcutsModal();
+  });
   document.addEventListener('keydown', function h(e) {
-    if (e.key === 'Escape') { closeShortcutsModal(); document.removeEventListener('keydown', h); }
+    if (e.key === 'Escape') {
+      closeShortcutsModal();
+      document.removeEventListener('keydown', h);
+    }
   });
 }
 
@@ -734,7 +821,10 @@ function showShortcutsModal() {
 export function exportDeck() {
   const ct = getActiveCardType();
   const data = getData();
-  if (!ct) { showToast('No card type selected.', 'error'); return; }
+  if (!ct) {
+    showToast('No card type selected.', 'error');
+    return;
+  }
 
   const deck = {
     version: 1,
@@ -785,7 +875,15 @@ export async function importDeck(file) {
 
     // Use the registry's internal register via registerFromUpload equivalent
     // We rebuild File objects so the registry path is used consistently
-    const schemaObj = { id: ct.id, name: ct.name, description: ct.description, cardSize: ct.cardSize, fields: ct.fields, colorMapping: ct.colorMapping, aggregations: ct.aggregations };
+    const schemaObj = {
+      id: ct.id,
+      name: ct.name,
+      description: ct.description,
+      cardSize: ct.cardSize,
+      fields: ct.fields,
+      colorMapping: ct.colorMapping,
+      aggregations: ct.aggregations,
+    };
     await registry.registerFromUpload(
       new File([JSON.stringify(schemaObj)], 'card-type.json'),
       new File([ct.frontTemplate], 'front.html'),
@@ -819,7 +917,10 @@ export async function importDeck(file) {
 async function exportCardsPng() {
   const ct = getActiveCardType();
   const data = getData() || ct?.sampleData;
-  if (!ct || !data) { showToast('No cards to export.', 'error'); return; }
+  if (!ct || !data) {
+    showToast('No cards to export.', 'error');
+    return;
+  }
 
   // Dynamically import heavy libraries at call time.
   // @vite-ignore suppresses Vite's static analysis warning without breaking CSP.
@@ -862,7 +963,7 @@ async function exportCardsPng() {
       offscreen.appendChild(wrapper);
 
       // Wait a frame for CSS to apply
-      await new Promise(r => requestAnimationFrame(r));
+      await new Promise((r) => requestAnimationFrame(r));
 
       const dataUrl = await htmlToImage.toPng(wrapper, { pixelRatio: 2 });
       const base64 = dataUrl.split(',')[1];

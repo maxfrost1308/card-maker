@@ -19,20 +19,19 @@ const LOG = new Uint8Array(256);
   EXP[255] = EXP[0];
 })();
 
-function gfMul(a, b) { return a === 0 || b === 0 ? 0 : EXP[(LOG[a] + LOG[b]) % 255]; }
+function gfMul(a, b) {
+  return a === 0 || b === 0 ? 0 : EXP[(LOG[a] + LOG[b]) % 255];
+}
 
 function polyMul(a, b) {
   const result = new Uint8Array(a.length + b.length - 1);
-  for (let i = 0; i < a.length; i++)
-    for (let j = 0; j < b.length; j++)
-      result[i + j] ^= gfMul(a[i], b[j]);
+  for (let i = 0; i < a.length; i++) for (let j = 0; j < b.length; j++) result[i + j] ^= gfMul(a[i], b[j]);
   return result;
 }
 
 function genPoly(n) {
   let g = new Uint8Array([1]);
-  for (let i = 0; i < n; i++)
-    g = polyMul(g, new Uint8Array([1, EXP[i]]));
+  for (let i = 0; i < n; i++) g = polyMul(g, new Uint8Array([1, EXP[i]]));
   return g;
 }
 
@@ -43,8 +42,7 @@ function ecBytes(data, ecLen) {
   for (let i = 0; i < data.length; i++) {
     const coeff = msg[i];
     if (coeff !== 0) {
-      for (let j = 0; j < gen.length; j++)
-        msg[i + j] ^= gfMul(gen[j], coeff);
+      for (let j = 0; j < gen.length; j++) msg[i + j] ^= gfMul(gen[j], coeff);
     }
   }
   return msg.slice(data.length);
@@ -54,23 +52,23 @@ function ecBytes(data, ecLen) {
 // [totalCodewords, ecCodewordsPerBlock, numBlocks, dataCodewords]
 const VERSION_TABLE = [
   null, // v0 placeholder
-  [26, 10, 1, 16],    // v1 (21x21)
-  [44, 16, 1, 28],    // v2
-  [70, 26, 1, 44],    // v3
-  [100, 18, 2, 64],   // v4
-  [134, 24, 2, 86],   // v5
-  [172, 16, 4, 108],  // v6
-  [196, 18, 4, 124],  // v7
-  [242, 24, 4, 154],  // v8
-  [292, 30, 4, 182],  // v9
-  [346, 18, 6, 216],  // v10 (57x57)
+  [26, 10, 1, 16], // v1 (21x21)
+  [44, 16, 1, 28], // v2
+  [70, 26, 1, 44], // v3
+  [100, 18, 2, 64], // v4
+  [134, 24, 2, 86], // v5
+  [172, 16, 4, 108], // v6
+  [196, 18, 4, 124], // v7
+  [242, 24, 4, 154], // v8
+  [292, 30, 4, 182], // v9
+  [346, 18, 6, 216], // v10 (57x57)
 ];
 
 function getVersion(dataLen) {
   // Byte mode overhead: 4 (mode) + 8 or 16 (length) bits
   for (let v = 1; v <= 10; v++) {
     const lenBits = v <= 9 ? 8 : 16;
-    const dataBits = (4 + lenBits + dataLen * 8);
+    const dataBits = 4 + lenBits + dataLen * 8;
     const dataBytes = VERSION_TABLE[v][3];
     if (dataBits <= dataBytes * 8) return v;
   }
@@ -79,14 +77,21 @@ function getVersion(dataLen) {
 
 // Alignment pattern positions per version
 const ALIGN_POS = [
-  null, [], [6, 18], [6, 22], [6, 26], [6, 30],
-  [6, 34], [6, 22, 38], [6, 24, 42], [6, 26, 46], [6, 28, 52],
+  null,
+  [],
+  [6, 18],
+  [6, 22],
+  [6, 26],
+  [6, 30],
+  [6, 34],
+  [6, 22, 38],
+  [6, 24, 42],
+  [6, 26, 46],
+  [6, 28, 52],
 ];
 
 // Format info bits for mask 0-7 at EC level M (pre-computed with BCH)
-const FORMAT_BITS = [
-  0x5412, 0x5125, 0x5E7C, 0x5B4B, 0x45F9, 0x40CE, 0x4F97, 0x4AA0,
-];
+const FORMAT_BITS = [0x5412, 0x5125, 0x5e7c, 0x5b4b, 0x45f9, 0x40ce, 0x4f97, 0x4aa0];
 
 // ---- Matrix operations ----
 // We use two matrices:
@@ -108,7 +113,8 @@ function setModule(matrix, r, c, val) {
 function addFinderPattern(matrix, isFunc, row, col) {
   for (let r = -1; r <= 7; r++) {
     for (let c = -1; c <= 7; c++) {
-      const mr = row + r, mc = col + c;
+      const mr = row + r,
+        mc = col + c;
       if (mr < 0 || mr >= matrix.length || mc < 0 || mc >= matrix.length) continue;
       const inOuter = r === 0 || r === 6 || c === 0 || c === 6;
       const inInner = r >= 2 && r <= 4 && c >= 2 && c <= 4;
@@ -185,7 +191,7 @@ function placeData(matrix, bits) {
 
 function applyMask(matrix, isFunc, maskFn) {
   const n = matrix.length;
-  const result = matrix.map(row => Int8Array.from(row));
+  const result = matrix.map((row) => Int8Array.from(row));
   for (let r = 0; r < n; r++) {
     for (let c = 0; c < n; c++) {
       // Only mask data modules — skip function pattern cells
@@ -219,9 +225,9 @@ const MASKS = [
   (r, c) => c % 3 === 0,
   (r, c) => (r + c) % 3 === 0,
   (r, c) => (Math.floor(r / 2) + Math.floor(c / 3)) % 2 === 0,
-  (r, c) => (r * c) % 2 + (r * c) % 3 === 0,
-  (r, c) => ((r * c) % 2 + (r * c) % 3) % 2 === 0,
-  (r, c) => ((r + c) % 2 + (r * c) % 3) % 2 === 0,
+  (r, c) => ((r * c) % 2) + ((r * c) % 3) === 0,
+  (r, c) => (((r * c) % 2) + ((r * c) % 3)) % 2 === 0,
+  (r, c) => (((r + c) % 2) + ((r * c) % 3)) % 2 === 0,
 ];
 
 function scoreMask(matrix) {
@@ -231,16 +237,24 @@ function scoreMask(matrix) {
   for (let r = 0; r < n; r++) {
     let count = 1;
     for (let c = 1; c < n; c++) {
-      if ((matrix[r][c] > 0) === (matrix[r][c - 1] > 0)) { count++; }
-      else { if (count >= 5) penalty += count - 2; count = 1; }
+      if (matrix[r][c] > 0 === matrix[r][c - 1] > 0) {
+        count++;
+      } else {
+        if (count >= 5) penalty += count - 2;
+        count = 1;
+      }
     }
     if (count >= 5) penalty += count - 2;
   }
   for (let c = 0; c < n; c++) {
     let count = 1;
     for (let r = 1; r < n; r++) {
-      if ((matrix[r][c] > 0) === (matrix[r - 1][c] > 0)) { count++; }
-      else { if (count >= 5) penalty += count - 2; count = 1; }
+      if (matrix[r][c] > 0 === matrix[r - 1][c] > 0) {
+        count++;
+      } else {
+        if (count >= 5) penalty += count - 2;
+        count = 1;
+      }
     }
     if (count >= 5) penalty += count - 2;
   }
@@ -280,24 +294,19 @@ export function generateQrSvg(text, options = {}) {
   // Mode indicator: byte mode = 0100
   dataBits.push(0, 1, 0, 0);
   // Character count
-  for (let i = lenBits - 1; i >= 0; i--)
-    dataBits.push((bytes.length >> i) & 1);
+  for (let i = lenBits - 1; i >= 0; i--) dataBits.push((bytes.length >> i) & 1);
   // Data
-  for (const b of bytes)
-    for (let i = 7; i >= 0; i--)
-      dataBits.push((b >> i) & 1);
+  for (const b of bytes) for (let i = 7; i >= 0; i--) dataBits.push((b >> i) & 1);
   // Terminator (up to 4 bits)
   const maxBits = dataCW * 8;
-  for (let i = 0; i < 4 && dataBits.length < maxBits; i++)
-    dataBits.push(0);
+  for (let i = 0; i < 4 && dataBits.length < maxBits; i++) dataBits.push(0);
   // Byte-align
   while (dataBits.length % 8 !== 0) dataBits.push(0);
   // Pad bytes
-  const padBytes = [0xEC, 0x11];
+  const padBytes = [0xec, 0x11];
   let pi = 0;
   while (dataBits.length < maxBits) {
-    for (let i = 7; i >= 0; i--)
-      dataBits.push((padBytes[pi % 2] >> i) & 1);
+    for (let i = 7; i >= 0; i--) dataBits.push((padBytes[pi % 2] >> i) & 1);
     pi++;
   }
 
@@ -305,8 +314,7 @@ export function generateQrSvg(text, options = {}) {
   const dataBytes = new Uint8Array(dataCW);
   for (let i = 0; i < dataCW; i++) {
     let byte = 0;
-    for (let b = 0; b < 8; b++)
-      byte = (byte << 1) | (dataBits[i * 8 + b] || 0);
+    for (let b = 0; b < 8; b++) byte = (byte << 1) | (dataBits[i * 8 + b] || 0);
     dataBytes[i] = byte;
   }
 
@@ -375,7 +383,7 @@ export function generateQrSvg(text, options = {}) {
   let bestMask = 0;
   for (let m = 0; m < 8; m++) {
     const masked = applyMask(matrix, isFunc, MASKS[m]);
-    const mCopy = masked.map(row => Int8Array.from(row));
+    const mCopy = masked.map((row) => Int8Array.from(row));
     writeFormatBits(mCopy, m);
     const score = scoreMask(mCopy);
     if (score < bestScore) {
@@ -398,8 +406,10 @@ export function generateQrSvg(text, options = {}) {
     }
   }
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${totalSize} ${totalSize}" shape-rendering="crispEdges">` +
+  return (
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${totalSize} ${totalSize}" shape-rendering="crispEdges">` +
     `<rect width="${totalSize}" height="${totalSize}" fill="${bg}"/>` +
     `<path d="${paths}" fill="${fg}"/>` +
-    `</svg>`;
+    `</svg>`
+  );
 }

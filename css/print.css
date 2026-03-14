@@ -2,13 +2,19 @@
 
 /* Screen: hide print area */
 @media screen {
-  #print-area { display: none; }
+  #print-area {
+    display: none;
+  }
 }
 
 @media print {
   /* Hide everything except print area */
-  body > *:not(#print-area) { display: none !important; }
-  #print-area { display: block; }
+  body > *:not(#print-area) {
+    display: none !important;
+  }
+  #print-area {
+    display: block;
+  }
 
   @page {
     size: letter;
