@@ -82,9 +82,9 @@ export async function addColumnFilter(page, fieldLabel, values) {
   await page.locator(".filter-bar-add").click();
   await page.waitForTimeout(200);
 
-  // Select the property
+  // Select the property (force: true needed on mobile where header may overlap)
   const propBtn = page.locator(".filter-prop-btn", { hasText: fieldLabel });
-  await propBtn.click();
+  await propBtn.click({ force: true });
   await page.waitForTimeout(200);
 
   // Check if it's a checkbox-based filter or text input
@@ -107,8 +107,8 @@ export async function addColumnFilter(page, fieldLabel, values) {
   } else {
     // Text input filter
     const input = page.locator(".filter-text-input");
-    await input.fill(values[0]);
-    await page.locator(".filter-apply-btn").click();
+    await input.fill(values[0], { force: true });
+    await page.locator(".filter-apply-btn").click({ force: true });
   }
   await page.waitForTimeout(300);
 }

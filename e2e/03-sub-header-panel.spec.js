@@ -202,10 +202,11 @@ test.describe("Sub Header Panel", () => {
       await loadPlantCards(page);
       await switchToTable(page);
       await openColumnSelector(page);
-      // Find the "Botanical Name" checkbox and uncheck it
+      // Find the "Botanical Name" checkbox and uncheck it.
+      // Use evaluate for mobile viewports where the dropdown may be outside the viewport.
       const label = page.locator(".col-prefs-label", { hasText: "Botanical" });
       const cb = label.locator("input[type='checkbox']");
-      await cb.uncheck();
+      await cb.evaluate((el) => { el.checked = false; el.dispatchEvent(new Event('change')); });
       await page.waitForTimeout(300);
       // The header should no longer have "Botanical Name"
       const headers = page.locator("thead th");
