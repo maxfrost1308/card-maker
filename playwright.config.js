@@ -1,8 +1,12 @@
 import { defineConfig, devices } from "@playwright/test";
 
+// IMPORTANT: Tests must only run against localhost. Never test against the
+// deployed GitHub Pages site (https://maxfrost1308.github.io/card-maker/)
+// as it is used for visual testing and may be on a different feature branch.
+
 export default defineConfig({
   testDir: "./e2e",
-  fullyParallel: false, // sequential — some tests depend on app state
+  fullyParallel: true,
   retries: 1,
   timeout: 30_000,
   expect: { timeout: 5_000 },
@@ -10,10 +14,15 @@ export default defineConfig({
 
   use: {
     baseURL: "http://localhost:5173",
-    // For live site: "https://maxfrost1308.github.io/card-maker/"
     screenshot: "only-on-failure",
     trace: "retain-on-failure",
     viewport: { width: 1280, height: 800 },
+  },
+
+  webServer: {
+    command: "npm run dev",
+    url: "http://localhost:5173",
+    reuseExistingServer: true,
   },
 
   projects: [

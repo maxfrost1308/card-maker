@@ -32,11 +32,13 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
+    "html-to-image": "^1.11.13",
+    "jszip": "^3.10.1",
     "papaparse": "^5.4.1"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.11.1",
-    "@playwright/test": "^1.58.2",
+    "@playwright/test": "^1.56.1",
     "@vitest/coverage-v8": "^2.1.0",
     "eslint": "^9.0.0",
     "globals": "^15.0.0",
