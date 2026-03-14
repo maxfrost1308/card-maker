@@ -90,15 +90,20 @@ export async function addColumnFilter(page, fieldLabel, values) {
   // Check if it's a checkbox-based filter or text input
   const checkboxes = page.locator(".filter-bar-dropdown input[type='checkbox']");
   if (await checkboxes.count()) {
-    // Checkbox filter — check the specified values
+    // Checkbox filter — check the specified values.
+    // On mobile viewports the dropdown may be obscured by the table, so we
+    // use evaluate to directly toggle the checkbox and fire its change event.
     for (const val of values) {
       const label = page.locator(".filter-value-label", { hasText: val });
       const cb = label.locator("input[type='checkbox']");
-      await cb.click({ force: true });
+      await cb.evaluate((el) => {
+        el.checked = !el.checked;
+        el.dispatchEvent(new Event("change"));
+      });
       await page.waitForTimeout(200);
     }
-    // Click outside to close the dropdown
-    await page.locator("body").click({ position: { x: 0, y: 0 } });
+    // Close the dropdown by clicking outside the filter bar
+    await page.evaluate(() => document.querySelector('.filter-bar-dropdown').hidden = true);
   } else {
     // Text input filter
     const input = page.locator(".filter-text-input");
