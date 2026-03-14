@@ -28,7 +28,7 @@ import { preloadIcons } from './icon-loader.js';
 import { createFocusTrap } from './focus-trap.js';
 import { setData, getData, registerRerenderFn, registerGetActiveCardTypeFn } from './state.js';
 import { createVirtualGrid, VS_THRESHOLD } from './virtual-scroll.js';
-import { getQuery, initDeckBar, updateDeckBar } from './deck-filter.js';
+import { getQuery } from './deck-filter.js';
 import { showToast } from './toast.js';
 import {
   hasFSAPI, openCsvWithPicker, loadCsvFile, saveToFile,
@@ -86,7 +86,6 @@ export async function rerenderActiveView(cardType, rows) {
   if (!rows) rows = getData() || cardType?.sampleData;
   if (!cardType || !rows) return;
 
-  updateDeckBar();
   // Show Add Card button only when real (non-sample) data is loaded
   const addBtn = document.getElementById('add-card-btn');
   if (addBtn) addBtn.hidden = !getData();
@@ -455,9 +454,7 @@ export function bindEvents() {
     }
     if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
       e.preventDefault();
-      const target = activeView === 'table'
-        ? document.querySelector('.table-global-filter')
-        : document.getElementById('shared-search');
+      const target = document.querySelector('.table-global-filter');
       target?.focus(); target?.select?.();
       return;
     }
@@ -501,62 +498,6 @@ export function bindEvents() {
       if (ct && data && activeView === 'cards') rerenderActiveView(ct, data);
     });
   });
-
-  // Select mode toggle
-  const selectModeBtn = document.getElementById('select-mode-btn');
-  const selectionBar = document.getElementById('card-selection-bar');
-  const bulkEditBtn = document.getElementById('bulk-edit-btn');
-  const selectAllCardsBtn = document.getElementById('select-all-cards-btn');
-  const clearSelectionBtn = document.getElementById('clear-selection-btn');
-
-  if (selectModeBtn) {
-    selectModeBtn.addEventListener('click', () => {
-      selectMode = !selectMode;
-      selectedCards.clear();
-      selectModeBtn.classList.toggle('active', selectMode);
-      selectModeBtn.textContent = selectMode ? '✕ Done' : '☑ Select';
-      if (selectionBar) selectionBar.hidden = !selectMode;
-      cardGrid.classList.toggle('select-mode', selectMode);
-      const ct = getActiveCardType();
-      const data = getData() || ct?.sampleData;
-      if (ct && data && activeView === 'cards') rerenderActiveView(ct, data);
-      _updateCardSelectionBar();
-    });
-  }
-
-  if (selectAllCardsBtn) {
-    selectAllCardsBtn.addEventListener('click', () => {
-      const ct = getActiveCardType();
-      const data = getData() || ct?.sampleData;
-      if (!data) return;
-      const q = getQuery().toLowerCase();
-      const indices = q
-        ? data.map((_, i) => i).filter(i => ct.fields.some(f => String(data[i][f.key] || '').toLowerCase().includes(q)))
-        : data.map((_, i) => i);
-      indices.forEach(i => selectedCards.add(i));
-      _updateCardSelectionBar();
-      // Update checkboxes in DOM
-      cardGrid.querySelectorAll('.card-pair').forEach((pair) => {
-        const cb = pair.querySelector('.card-select-cb');
-        if (cb) { cb.checked = true; pair.classList.add('selected'); }
-      });
-    });
-  }
-
-  if (clearSelectionBtn) {
-    clearSelectionBtn.addEventListener('click', () => {
-      selectedCards.clear();
-      _updateCardSelectionBar();
-      cardGrid.querySelectorAll('.card-pair').forEach(pair => {
-        const cb = pair.querySelector('.card-select-cb');
-        if (cb) { cb.checked = false; pair.classList.remove('selected'); }
-      });
-    });
-  }
-
-  if (bulkEditBtn) {
-    bulkEditBtn.addEventListener('click', () => openBulkEditModal());
-  }
 
   // Bulk edit modal
   document.getElementById('bulk-edit-close')?.addEventListener('click', closeBulkEditModal);
@@ -645,13 +586,6 @@ export function bindEvents() {
       colorMapping: ct.colorMapping || {},
     };
     downloadFile(`${ct.id}-bundle.json`, JSON.stringify(bundle, null, 2), 'application/json');
-  });
-
-  // Shared deck filter bar (REQ-065, shared between card + table views)
-  initDeckBar(() => {
-    const ct = getActiveCardType();
-    const data = getData() || ct?.sampleData;
-    if (ct && data) rerenderActiveView(ct, data);
   });
 
   // Drag-and-drop CSV (REQ-050)

@@ -100,21 +100,8 @@
     </aside>
 
     <main class="main-area" id="main-content">
-      <div id="deck-bar" class="deck-bar" hidden>
-        <span id="deck-summary" class="deck-summary"></span>
-        <div id="shared-filter-bar" class="shared-filter-bar">
-          <input id="shared-search" type="search" class="shared-search-input" placeholder="Search cards…" aria-label="Search cards">
-          <span id="shared-filter-tokens" class="shared-filter-tokens"></span>
-          <button id="shared-clear-filters" class="btn btn-sm" hidden>Clear filters</button>
-        </div>
-        <div id="card-selection-bar" class="card-selection-bar" hidden>
-          <span id="card-selected-count" class="card-selected-count">0 selected</span>
-          <button id="bulk-edit-btn" class="btn btn-sm btn-primary" disabled>✎ Bulk Edit</button>
-          <button id="select-all-cards-btn" class="btn btn-sm">Select all</button>
-          <button id="clear-selection-btn" class="btn btn-sm">Clear</button>
-        </div>
-        <button id="select-mode-btn" class="btn btn-sm" title="Select cards for bulk editing">☑ Select</button>
-      </div>
+      <div id="top-controls"></div>
+      <div id="top-aggregation-bar"></div>
       <div id="card-grid" class="card-grid">
         <div class="empty-state">
           <p>Select a card type and upload a CSV to get started.</p>
