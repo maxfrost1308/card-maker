@@ -130,7 +130,8 @@ export async function registerFromBundle(bundle) {
   if (!bundle.id || typeof bundle.id !== 'string') throw new Error('Bundle must have a string "id" field.');
   if (!bundle.name || typeof bundle.name !== 'string') throw new Error('Bundle must have a string "name" field.');
   if (!bundle.fields || !Array.isArray(bundle.fields)) throw new Error('Bundle must have a "fields" array.');
-  if (!bundle.frontTemplate || typeof bundle.frontTemplate !== 'string') throw new Error('Bundle must have a "frontTemplate" string.');
+  if (!bundle.frontTemplate || typeof bundle.frontTemplate !== 'string')
+    throw new Error('Bundle must have a "frontTemplate" string.');
 
   const validTypes = ['text', 'select', 'multi-select', 'tags', 'url', 'image', 'number', 'icon', 'qr', 'text-long'];
   for (const f of bundle.fields) {
@@ -178,7 +179,10 @@ function sanitizeTemplate(html) {
   // Remove all on* event handler attributes (onclick, onerror, onload, etc.)
   sanitized = sanitized.replace(/\s+on\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '');
   // Remove javascript: and vbscript: URLs in href/src/action attributes
-  sanitized = sanitized.replace(/(href|src|action)\s*=\s*(?:"javascript:[^"]*"|'javascript:[^']*')/gi, '$1="about:blank"');
+  sanitized = sanitized.replace(
+    /(href|src|action)\s*=\s*(?:"javascript:[^"]*"|'javascript:[^']*')/gi,
+    '$1="about:blank"',
+  );
   sanitized = sanitized.replace(/(href|src|action)\s*=\s*(?:"vbscript:[^"]*"|'vbscript:[^']*')/gi, '$1="about:blank"');
   return sanitized;
 }
@@ -239,7 +243,7 @@ export function get(id) {
  * List all registered card type ids and names.
  */
 export function listAll() {
-  return Array.from(registry.values()).map(ct => ({ id: ct.id, name: ct.name, builtIn: !!ct._builtIn }));
+  return Array.from(registry.values()).map((ct) => ({ id: ct.id, name: ct.name, builtIn: !!ct._builtIn }));
 }
 
 // -- helpers --

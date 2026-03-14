@@ -127,7 +127,12 @@ Each E2E test is a named product requirement. The test suite is the single sourc
 3. **Write the failing test** — add or modify the test that describes the desired behavior. Run it and **confirm it fails** (red). If it already passes, your test isn't testing the right thing — revise it. Do NOT proceed until you have a genuinely failing test. You still must not have read any source code at this point.
 4. **Make code changes** — NOW you may read source code. Investigate the root cause and implement the fix/feature until the new test passes (green).
 5. **Run the full suite** — ensure ALL requirements (old + new) pass. Fix any regressions before proceeding.
-6. **Report** — document in `REQUIREMENTS_LOG.md`:
+6. **Pre-commit quality gate** — before every commit, run all four checks in order. Fix any issues before committing:
+   1. `npm run format` — auto-fix formatting with Prettier
+   2. `npm run lint` — must have 0 errors (warnings are acceptable)
+   3. `npm test` — all unit/integration tests must pass
+   4. `npm run build` — production build must succeed
+7. **Report** — document in `REQUIREMENTS_LOG.md`:
    - Any existing requirements that had to be modified (with justification)
    - Any new requirements added
    - Whether the change was additive or required trade-offs

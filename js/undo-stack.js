@@ -29,10 +29,14 @@ export function pushUndo(command) {
 }
 
 /** @returns {boolean} */
-export function canUndo() { return _undoStack.length > 0; }
+export function canUndo() {
+  return _undoStack.length > 0;
+}
 
 /** @returns {boolean} */
-export function canRedo() { return _redoStack.length > 0; }
+export function canRedo() {
+  return _redoStack.length > 0;
+}
 
 /**
  * Undo the last command.

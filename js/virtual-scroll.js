@@ -25,11 +25,16 @@ function cssToPixels(val) {
   const n = parseFloat(val);
   const unit = val.replace(/[0-9.]/g, '').trim();
   switch (unit) {
-    case 'mm': return n * 3.7795275591;
-    case 'cm': return n * 37.795275591;
-    case 'in': return n * 96;
-    case 'pt': return n * (96 / 72);
-    default: return n;
+    case 'mm':
+      return n * 3.7795275591;
+    case 'cm':
+      return n * 37.795275591;
+    case 'in':
+      return n * 96;
+    case 'pt':
+      return n * (96 / 72);
+    default:
+      return n;
   }
 }
 
@@ -49,7 +54,9 @@ export function createVirtualGrid(container, opts) {
   let showBacks = opts.showBacks ?? false;
   let overlayMode = opts.overlayMode ?? false;
 
-  function getIndices() { return filteredIndices || rows.map((_, i) => i); }
+  function getIndices() {
+    return filteredIndices || rows.map((_, i) => i);
+  }
 
   function getColCount() {
     const w = container.offsetWidth || window.innerWidth;
@@ -99,9 +106,12 @@ export function createVirtualGrid(container, opts) {
       overlay.className = 'card-overlay';
       overlay.setAttribute('aria-hidden', 'true');
       const lines = cardType.fields
-        .filter(f => row[f.key] && String(row[f.key]).trim())
+        .filter((f) => row[f.key] && String(row[f.key]).trim())
         .slice(0, 6)
-        .map(f => `<div class="overlay-field"><span class="overlay-label">${escapeHtml(f.label)}</span><span class="overlay-value">${escapeHtml(String(row[f.key]).slice(0, 40))}</span></div>`)
+        .map(
+          (f) =>
+            `<div class="overlay-field"><span class="overlay-label">${escapeHtml(f.label)}</span><span class="overlay-value">${escapeHtml(String(row[f.key]).slice(0, 40))}</span></div>`,
+        )
         .join('');
       overlay.innerHTML = lines;
       front.appendChild(overlay);
@@ -170,7 +180,10 @@ export function createVirtualGrid(container, opts) {
 
   let resizeObs = null;
   if (typeof ResizeObserver !== 'undefined') {
-    resizeObs = new ResizeObserver(() => { _lastRange = ''; onScroll(); });
+    resizeObs = new ResizeObserver(() => {
+      _lastRange = '';
+      onScroll();
+    });
     resizeObs.observe(container);
   }
 

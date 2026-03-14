@@ -3,21 +3,38 @@
  */
 
 export function getStarterSchema() {
-  return JSON.stringify({
-    id: 'my-cards',
-    name: 'My Card Type',
-    description: 'A custom card type — edit this to match your needs.',
-    cardSize: { width: '2.5in', height: '3.5in' },
-    fields: [
-      { key: 'title', label: 'Title', type: 'text', required: true, maxLength: 60 },
-      { key: 'category', label: 'Category', type: 'select', options: ['Option A', 'Option B', 'Option C'], pillColors: { 'Option A': '#27ae60', 'Option B': '#e67e22', 'Option C': '#c0392b' } },
-      { key: 'tags', label: 'Tags', type: 'multi-select', separator: '|', options: ['Tag1', 'Tag2', 'Tag3', 'Tag4'], pillColors: { 'Tag1': '#2980b9', 'Tag2': '#8e44ad', 'Tag3': '#27ae60', 'Tag4': '#e67e22' } },
-      { key: 'description', label: 'Description', type: 'text', maxLength: 200 },
-      { key: 'count', label: 'Count', type: 'number' },
-      { key: 'link', label: 'Link', type: 'url' },
-      { key: 'icon', label: 'Icon', type: 'icon' }
-    ]
-  }, null, 2);
+  return JSON.stringify(
+    {
+      id: 'my-cards',
+      name: 'My Card Type',
+      description: 'A custom card type — edit this to match your needs.',
+      cardSize: { width: '2.5in', height: '3.5in' },
+      fields: [
+        { key: 'title', label: 'Title', type: 'text', required: true, maxLength: 60 },
+        {
+          key: 'category',
+          label: 'Category',
+          type: 'select',
+          options: ['Option A', 'Option B', 'Option C'],
+          pillColors: { 'Option A': '#27ae60', 'Option B': '#e67e22', 'Option C': '#c0392b' },
+        },
+        {
+          key: 'tags',
+          label: 'Tags',
+          type: 'multi-select',
+          separator: '|',
+          options: ['Tag1', 'Tag2', 'Tag3', 'Tag4'],
+          pillColors: { Tag1: '#2980b9', Tag2: '#8e44ad', Tag3: '#27ae60', Tag4: '#e67e22' },
+        },
+        { key: 'description', label: 'Description', type: 'text', maxLength: 200 },
+        { key: 'count', label: 'Count', type: 'number' },
+        { key: 'link', label: 'Link', type: 'url' },
+        { key: 'icon', label: 'Icon', type: 'icon' },
+      ],
+    },
+    null,
+    2,
+  );
 }
 
 export function getStarterFront() {

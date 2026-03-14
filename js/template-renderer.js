@@ -21,7 +21,7 @@ import { generateQrSvg } from './qr-code.js';
 const ESC_MAP = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
 
 export function escapeHtml(str) {
-  return String(str).replace(/[&<>"']/g, c => ESC_MAP[c]);
+  return String(str).replace(/[&<>"']/g, (c) => ESC_MAP[c]);
 }
 
 // ── Template compilation & caching (REQ-070) ──────────────────────────────────
@@ -89,10 +89,10 @@ function _buildSegments(template) {
         const val = data[key];
         if (!val) return '';
         const url = resolveIconUrl(String(val), 'ffffff', '000000');
-        if (url) return `<img src="${escapeHtml(url)}" class="icon-img" data-icon="${escapeHtml(String(val))}" alt="icon">`;
+        if (url)
+          return `<img src="${escapeHtml(url)}" class="icon-img" data-icon="${escapeHtml(String(val))}" alt="icon">`;
         return '';
       });
-
     } else if (m[2] !== undefined) {
       // {{{qr:field}}}
       const key = m[2];
@@ -101,7 +101,6 @@ function _buildSegments(template) {
         if (!val) return '';
         return generateQrSvg(String(val));
       });
-
     } else if (m[3] !== undefined) {
       // {{#field}}...{{/field}} — array iteration or truthy check
       const key = m[3];
@@ -114,9 +113,7 @@ function _buildSegments(template) {
         if (Array.isArray(val)) {
           if (val.length === 0) return '';
           if (!hasPlaceholder) return _exec(innerSegs, data);
-          return val.map((item, i) =>
-            _exec(innerSegs, { ...data, '.': String(item), '@index': String(i) })
-          ).join('');
+          return val.map((item, i) => _exec(innerSegs, { ...data, '.': String(item), '@index': String(i) })).join('');
         }
         // Non-array truthy check
         if (val && val !== '') {
@@ -124,18 +121,15 @@ function _buildSegments(template) {
         }
         return '';
       });
-
     } else if (m[5] !== undefined) {
       // {{^field}}...{{/field}} — inverted block
       const key = m[5];
       const innerSegs = _buildSegments(m[6]); // recursive
       segs.push((data) => {
         const val = data[key];
-        const empty = val === undefined || val === null || val === '' ||
-                      (Array.isArray(val) && val.length === 0);
+        const empty = val === undefined || val === null || val === '' || (Array.isArray(val) && val.length === 0);
         return empty ? _exec(innerSegs, data) : '';
       });
-
     } else if (m[7] !== undefined) {
       // {{{field}}} — raw (no escaping)
       const key = m[7];
@@ -144,7 +138,6 @@ function _buildSegments(template) {
         if (val === undefined || val === null) return '';
         return String(val);
       });
-
     } else if (m[8] !== undefined) {
       // {{field}} — escaped
       const key = m[8];
@@ -190,7 +183,10 @@ export function preprocessRow(row, fields, cardType) {
 
     if ((field.type === 'multi-select' || field.type === 'tags') && typeof val === 'string' && val.length > 0) {
       const sep = field.separator || '|';
-      data[field.key] = val.split(sep).map(v => v.trim()).filter(Boolean);
+      data[field.key] = val
+        .split(sep)
+        .map((v) => v.trim())
+        .filter(Boolean);
     } else {
       data[field.key] = val;
     }
@@ -199,7 +195,7 @@ export function preprocessRow(row, fields, cardType) {
     if (typeof data[field.key] === 'string') {
       data[field.key + '_lower'] = data[field.key].toLowerCase().replace(/\s+/g, '-');
     } else if (Array.isArray(data[field.key])) {
-      data[field.key + '_lower'] = data[field.key].map(v => v.toLowerCase().replace(/\s+/g, '-'));
+      data[field.key + '_lower'] = data[field.key].map((v) => v.toLowerCase().replace(/\s+/g, '-'));
     }
   }
   // Also carry forward any fields not in schema (extra CSV columns)

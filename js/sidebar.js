@@ -35,17 +35,18 @@ export function refreshCardTypeList() {
   // Remove everything after the first placeholder option
   while (select.options.length > 1) select.remove(1);
   // Remove old optgroups
-  select.querySelectorAll('optgroup').forEach(g => g.remove());
+  select.querySelectorAll('optgroup').forEach((g) => g.remove());
 
-  const builtIns = types.filter(t => t.builtIn);
-  const customs = types.filter(t => !t.builtIn);
+  const builtIns = types.filter((t) => t.builtIn);
+  const customs = types.filter((t) => !t.builtIn);
 
   if (builtIns.length > 0) {
     const group = document.createElement('optgroup');
     group.label = 'Built-in';
     for (const t of builtIns) {
       const opt = document.createElement('option');
-      opt.value = t.id; opt.textContent = t.name;
+      opt.value = t.id;
+      opt.textContent = t.name;
       group.appendChild(opt);
     }
     select.appendChild(group);
@@ -56,7 +57,8 @@ export function refreshCardTypeList() {
     group.label = 'Custom';
     for (const t of customs) {
       const opt = document.createElement('option');
-      opt.value = t.id; opt.textContent = t.name;
+      opt.value = t.id;
+      opt.textContent = t.name;
       group.appendChild(opt);
     }
     select.appendChild(group);
@@ -132,12 +134,14 @@ export function selectCardType(id, renderFn, renderEmptyFn) {
 export function renderFieldReference(fields) {
   const ref = el('field-reference');
   if (!ref) return;
-  ref.innerHTML = fields.map(f => {
-    let info = `<span class="field-ref-key">${f.key}</span>`;
-    info += `<span class="field-ref-type">${f.type}${f.required ? ' *' : ''}</span>`;
-    if (f.options?.length > 0) info += `<div class="field-ref-opts">${f.options.join(', ')}</div>`;
-    if (f.separator) info += `<div class="field-ref-opts">Separator: "${f.separator}"</div>`;
-    if (f.maxLength) info += `<div class="field-ref-opts">Max: ${f.maxLength} chars</div>`;
-    return `<div class="field-ref-item">${info}</div>`;
-  }).join('');
+  ref.innerHTML = fields
+    .map((f) => {
+      let info = `<span class="field-ref-key">${f.key}</span>`;
+      info += `<span class="field-ref-type">${f.type}${f.required ? ' *' : ''}</span>`;
+      if (f.options?.length > 0) info += `<div class="field-ref-opts">${f.options.join(', ')}</div>`;
+      if (f.separator) info += `<div class="field-ref-opts">Separator: "${f.separator}"</div>`;
+      if (f.maxLength) info += `<div class="field-ref-opts">Max: ${f.maxLength} chars</div>`;
+      return `<div class="field-ref-item">${info}</div>`;
+    })
+    .join('');
 }

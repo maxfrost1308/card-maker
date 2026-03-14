@@ -81,7 +81,10 @@ export function openEditModal(rowIndex, triggerEl) {
 
   // Parse verified fields
   const verifiedSet = new Set(
-    (row.verified_fields || '').split('|').map(v => v.trim()).filter(Boolean)
+    (row.verified_fields || '')
+      .split('|')
+      .map((v) => v.trim())
+      .filter(Boolean),
   );
 
   // Build form
@@ -128,21 +131,30 @@ export function openEditModal(rowIndex, triggerEl) {
       picker.dataset.fieldKey = field.key;
       picker.dataset.selectType = 'single';
       wrapper.appendChild(picker);
-
     } else if (field.type === 'multi-select' && field.options) {
       const sep = field.separator || '|';
-      const selected = typeof value === 'string' ? value.split(sep).map(v => v.trim()).filter(Boolean) : [];
+      const selected =
+        typeof value === 'string'
+          ? value
+              .split(sep)
+              .map((v) => v.trim())
+              .filter(Boolean)
+          : [];
       const picker = createPillPicker(field, selected, () => {});
       picker.dataset.fieldKey = field.key;
       wrapper.appendChild(picker);
-
     } else if (field.type === 'tags') {
       const sep = field.separator || '|';
-      const selected = typeof value === 'string' ? value.split(sep).map(v => v.trim()).filter(Boolean) : [];
+      const selected =
+        typeof value === 'string'
+          ? value
+              .split(sep)
+              .map((v) => v.trim())
+              .filter(Boolean)
+          : [];
       const picker = createTagPicker(field, selected, () => {}, data);
       picker.dataset.fieldKey = field.key;
       wrapper.appendChild(picker);
-
     } else {
       const input = document.createElement('input');
       input.dataset.fieldKey = field.key;
@@ -225,8 +237,14 @@ function saveCurrentEdit() {
   if (oldRow !== null) {
     const idx = currentEditIndex;
     pushUndo({
-      undo: () => { setRowData(idx, oldRow); rerenderActiveView(); },
-      redo: () => { setRowData(idx, newRow); rerenderActiveView(); },
+      undo: () => {
+        setRowData(idx, oldRow);
+        rerenderActiveView();
+      },
+      redo: () => {
+        setRowData(idx, newRow);
+        rerenderActiveView();
+      },
     });
   }
 
@@ -248,8 +266,14 @@ function duplicateCurrentCard() {
   setRowData(data.length - 1, copy);
 
   pushUndo({
-    undo: () => { data.splice(data.length - 1, 1); rerenderActiveView(); },
-    redo: () => { data.push({ ...copy }); rerenderActiveView(); },
+    undo: () => {
+      data.splice(data.length - 1, 1);
+      rerenderActiveView();
+    },
+    redo: () => {
+      data.push({ ...copy });
+      rerenderActiveView();
+    },
   });
 
   closeEditModal();
