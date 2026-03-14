@@ -7,8 +7,13 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 12px;
+  padding: 8px 12px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border, #e0e0e0);
   flex-wrap: wrap;
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 .table-global-filter {
@@ -68,7 +73,7 @@
 .data-table th {
   cursor: pointer;
   position: sticky;
-  top: 53px;
+  top: 0;
   background: var(--surface);
   padding: 8px 10px;
   text-align: left;

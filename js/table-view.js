@@ -168,14 +168,19 @@ export function renderTable(cardType, rows) {
   bulkBar.appendChild(deleteBtn);
 
   controls.appendChild(bulkBar);
-  container.appendChild(controls);
 
-  // Aggregation bar
+  // Render controls and aggregation bar into top-level containers
+  const topControlsEl = document.getElementById('top-controls');
+  topControlsEl.innerHTML = '';
+  topControlsEl.appendChild(controls);
+
+  const topAggEl = document.getElementById('top-aggregation-bar');
+  topAggEl.innerHTML = '';
   if (cardType.aggregations && cardType.aggregations.length > 0) {
     const aggBar = document.createElement('div');
     aggBar.className = 'table-aggregation-bar';
     aggregationBarRef = aggBar;
-    container.appendChild(aggBar);
+    topAggEl.appendChild(aggBar);
   } else {
     aggregationBarRef = null;
   }
@@ -944,6 +949,10 @@ export function getFilteredIndices() {
 export function destroyTable() {
   if (_abortController) { _abortController.abort(); _abortController = null; }
   if (container) container.innerHTML = '';
+  const topControlsEl = document.getElementById('top-controls');
+  if (topControlsEl) topControlsEl.innerHTML = '';
+  const topAggEl = document.getElementById('top-aggregation-bar');
+  if (topAggEl) topAggEl.innerHTML = '';
   sortState = { key: null, dir: 'asc' };
   columnFilters = {};
   globalFilter = '';

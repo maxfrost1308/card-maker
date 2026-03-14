@@ -8,7 +8,6 @@ import * as registry from './card-type-registry.js';
 import { generateCsv } from './csv-parser.js';
 import { downloadFile } from './file-io.js';
 import { getData, rerenderActiveView } from './state.js';
-import { updateDeckBar } from './deck-filter.js';
 
 // DOM refs (queried lazily to survive module-load-before-DOM scenarios in tests)
 const el = (id) => document.getElementById(id);
@@ -117,7 +116,6 @@ export function selectCardType(id, renderFn, renderEmptyFn) {
 
   // Render: use live data, fall back to sample data, else empty
   const data = getData();
-  updateDeckBar();
   if (!data && ct.sampleData) {
     rerenderActiveView(ct, ct.sampleData);
   } else if (data) {
