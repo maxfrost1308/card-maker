@@ -5,6 +5,18 @@ import { test, expect } from "@playwright/test";
 test.describe("App load & initial state", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/");
+    // App uses IndexedDB (not localStorage) for session persistence — clear it
+    await page.evaluate(async () => {
+      await new Promise((res) => {
+        const req = indexedDB.deleteDatabase("card-maker-db");
+        req.onsuccess = res;
+        req.onerror = res;
+        req.onblocked = res;
+      });
+      localStorage.clear();
+      sessionStorage.clear();
+    });
+    await page.reload();
   });
 
   test("page loads with correct title", async ({ page }) => {
@@ -26,13 +38,20 @@ test.describe("App load & initial state", () => {
   test("empty state message is shown when no cards loaded", async ({
     page,
   }) => {
-    const emptyMsg = page.getByText(/Select a card type/i);
-    await expect(emptyMsg).toBeVisible();
+    // App auto-selects TTRPG with sample data on fresh load.
+    // The sidebar always shows the CSV upload prompt when no user CSV is open.
+    await page.waitForTimeout(500);
+    const uploadHint = page.getByText(/Upload a CSV matching/i);
+    await expect(uploadHint).toBeVisible();
+    // No user CSV filename is shown (only the hint text, not a filename)
+    const body = await page.textContent("body");
+    expect(body).toContain("Upload a CSV matching the selected card type");
   });
 
   test("Cards/Table view toggle is present", async ({ page }) => {
-    const cardsTab = page.getByText("Cards");
-    const tableTab = page.getByText("Table");
+    // Target the view-toggle buttons specifically
+    const cardsTab = page.getByRole("button", { name: /^Cards$/i });
+    const tableTab = page.getByRole("button", { name: /^Table$/i });
     await expect(cardsTab).toBeVisible();
     await expect(tableTab).toBeVisible();
   });

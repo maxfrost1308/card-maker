@@ -9,8 +9,8 @@ export default defineConfig({
   reporter: [["html", { open: "never" }], ["list"]],
 
   use: {
-    baseURL: "https://maxfrost1308.github.io/card-maker/",
-    // For local dev, change to: "http://localhost:5173"
+    baseURL: "http://localhost:5173",
+    // For live site: "https://maxfrost1308.github.io/card-maker/"
     screenshot: "only-on-failure",
     trace: "retain-on-failure",
     viewport: { width: 1280, height: 800 },

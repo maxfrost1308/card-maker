@@ -2,13 +2,18 @@
 // Tests: CSV download, deck export/import, print layout
 import { test, expect } from "@playwright/test";
 import path from "path";
+import { fileURLToPath } from "url";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 test.describe("Export, import & print", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/");
 
     const select = page.locator("select").first();
-    await select.selectOption({ label: /Plant/i });
+    const opts = await select.locator("option").allTextContents();
+    const plantOpt = opts.find((o) => /plant/i.test(o));
+    await select.selectOption({ label: plantOpt });
     await page.waitForTimeout(300);
 
     const fileInput = page.locator('input[type="file"][accept*=".csv"]').first();

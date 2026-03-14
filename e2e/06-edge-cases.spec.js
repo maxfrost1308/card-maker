@@ -14,8 +14,21 @@ const fixturesDir = path.resolve(__dirname, "fixtures");
 test.describe("Edge cases & error handling", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/");
+    await page.evaluate(async () => {
+      await new Promise((res) => {
+        const req = indexedDB.deleteDatabase("card-maker-db");
+        req.onsuccess = res;
+        req.onerror = res;
+        req.onblocked = res;
+      });
+      localStorage.clear();
+      sessionStorage.clear();
+    });
+    await page.reload();
     const select = page.locator("select").first();
-    await select.selectOption({ label: /Plant/i });
+    const opts = await select.locator("option").allTextContents();
+    const plantOpt = opts.find((o) => /plant/i.test(o));
+    await select.selectOption({ label: plantOpt });
     await page.waitForTimeout(300);
   });
 
@@ -95,9 +108,11 @@ test.describe("Edge cases & error handling", () => {
     await uploadCSVString(page, csv, "special-chars.csv");
 
     const pageContent = await page.textContent("body");
-    // HTML entities should be escaped (not rendered as HTML)
+    // The literal text should appear as-is
     expect(pageContent).toContain("Plant &");
-    expect(pageContent).not.toContain("<Flower>"); // should be escaped
+    // Verify no actual <flower> DOM element was injected (XSS check)
+    const flowerEl = await page.locator("flower").count();
+    expect(flowerEl).toBe(0);
   });
 
   test("Unicode/emoji in CSV fields render correctly", async ({ page }) => {
@@ -108,7 +123,8 @@ test.describe("Edge cases & error handling", () => {
 
     const pageContent = await page.textContent("body");
     expect(pageContent).toContain("🌿");
-    expect(pageContent).toContain("déliciosa");
+    // Note: "species" column maps to "botanical" schema key — check name emoji instead
+    expect(pageContent).toContain("Monstera 🌿");
   });
 
   test("large CSV (200 rows) loads without timeout", async ({ page }) => {
@@ -118,10 +134,11 @@ test.describe("Edge cases & error handling", () => {
     }
     await uploadCSVString(page, csv, "large.csv");
 
-    // At least some cards should render
+    // Virtual scroll only renders visible cards — check count indicator and first card
     const pageContent = await page.textContent("body");
     expect(pageContent).toContain("Plant 0");
-    expect(pageContent).toContain("Plant 199");
+    // Check the card count indicator shows 200
+    expect(pageContent).toMatch(/200\s*cards?/i);
   });
 
   test("XSS attempt via CSV field is sanitized", async ({ page }) => {

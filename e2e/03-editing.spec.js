@@ -2,6 +2,9 @@
 // Tests: Edit modal open/close, field editing, save, cancel, bulk edit
 import { test, expect } from "@playwright/test";
 import path from "path";
+import { fileURLToPath } from "url";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 test.describe("Editing flows", () => {
   test.beforeEach(async ({ page }) => {
@@ -9,7 +12,9 @@ test.describe("Editing flows", () => {
 
     // Setup: select Plant Care + upload CSV
     const select = page.locator("select").first();
-    await select.selectOption({ label: /Plant/i });
+    const opts = await select.locator("option").allTextContents();
+    const plantOpt = opts.find((o) => /plant/i.test(o));
+    await select.selectOption({ label: plantOpt });
     await page.waitForTimeout(300);
 
     const fileInput = page.locator('input[type="file"][accept*=".csv"]').first();
@@ -190,7 +195,7 @@ test.describe("Editing flows", () => {
 
   test("bulk edit: select cards and apply a value", async ({ page }) => {
     // Switch to table view where selection checkboxes are more likely visible
-    await page.getByText("Table").click();
+    await page.getByRole("button", { name: /^Table$/i }).click();
     await page.waitForTimeout(300);
 
     // Try "Select all"
