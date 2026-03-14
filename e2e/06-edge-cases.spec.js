@@ -116,15 +116,15 @@ test.describe("Edge cases & error handling", () => {
   });
 
   test("Unicode/emoji in CSV fields render correctly", async ({ page }) => {
+    // Use "botanical" (not "species") to match the plant-care schema key
     const csv =
-      "name,species,light,water,humidity,notes\n" +
+      "name,botanical,light,water,humidity,notes\n" +
       "Monstera 🌿,Monstera déliciosa,☀️ Bright,💧 Weekly,High,Très bien\n";
     await uploadCSVString(page, csv, "unicode.csv");
 
     const pageContent = await page.textContent("body");
-    expect(pageContent).toContain("🌿");
-    // Note: "species" column maps to "botanical" schema key — check name emoji instead
-    expect(pageContent).toContain("Monstera 🌿");
+    expect(pageContent).toContain("🌿");          // emoji in name field
+    expect(pageContent).toContain("déliciosa");    // accented chars in botanical field
   });
 
   test("large CSV (200 rows) loads without timeout", async ({ page }) => {
