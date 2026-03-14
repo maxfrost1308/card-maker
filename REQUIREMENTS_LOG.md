@@ -29,3 +29,4 @@ See `CLAUDE.md` for the development workflow that uses this log.
 | Date | Spec File | Requirement | Action | Justification |
 |------|-----------|-------------|--------|---------------|
 | 2026-03-14 | all | — | Created | Initial requirements baseline from product experience analysis |
+| 2026-03-14 | `03-sub-header-panel.spec.js` | filter dropdown renders above the table header, not behind it | Added | Bug fix: `.table-controls` z-index (10) was lower than sticky `th` z-index (20), causing the filter dropdown to render behind the table header |

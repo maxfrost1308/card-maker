@@ -83,6 +83,28 @@ test.describe("Sub Header Panel", () => {
       expect(await props.count()).toBeGreaterThan(0);
     });
 
+    test("filter dropdown renders above the table header, not behind it", async ({ page }) => {
+      await loadPlantCards(page);
+      await switchToTable(page);
+
+      // The filter bar is inside .table-controls which creates a stacking
+      // context. The table header (th) is position:sticky with its own
+      // z-index. The controls stacking context must be higher than the th
+      // z-index so the dropdown is never obscured by the sticky header.
+      const controlsZIndex = await page.evaluate(() => {
+        const controls = document.querySelector('.table-controls');
+        return parseInt(getComputedStyle(controls).zIndex) || 0;
+      });
+      const thZIndex = await page.evaluate(() => {
+        const th = document.querySelector('.data-table th');
+        return parseInt(getComputedStyle(th).zIndex) || 0;
+      });
+
+      // The controls bar (which contains the filter dropdown) must have a
+      // higher z-index than the sticky table header
+      expect(controlsZIndex).toBeGreaterThan(thZIndex);
+    });
+
     test("selecting a select field shows checkbox options", async ({ page }) => {
       await loadPlantCards(page);
       await switchToTable(page);
